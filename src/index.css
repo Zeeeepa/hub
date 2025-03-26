@@ -82,10 +82,13 @@
   }
 
   .project-card {
-    @apply glass-card p-6 rounded-xl space-y-4 cursor-pointer 
+    @apply glass-card p-5 rounded-xl space-y-3 cursor-pointer 
            transition-all duration-300 hover:scale-[1.02]
            hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]
-           hover:bg-gray-800/40;
+           hover:bg-gray-800/40 border border-gray-700/30
+           hover:border-indigo-500/30;
+    background: linear-gradient(135deg, rgba(30, 30, 40, 0.4), rgba(20, 20, 30, 0.4));
+    backdrop-filter: blur(10px);
   }
 
   .card-action-button {

@@ -114,8 +114,8 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
         {items.map((item, index) => (
           <li key={item.path} className="select-none">
             <div 
-              className={`flex items-center py-1.5 px-2 rounded-md hover:bg-gray-700/50 cursor-pointer ${
-                selectedFile?.path === item.path ? 'bg-indigo-600/20 text-indigo-300' : ''
+              className={`flex items-center py-1.5 px-2 rounded-md hover:bg-gray-700/50 cursor-pointer transition-colors duration-150 ${
+                selectedFile?.path === item.path ? 'bg-indigo-600/20 text-indigo-300 border-l-2 border-indigo-400' : ''
               }`}
               onClick={() => item.type === 'dir' 
                 ? toggleDirectory(item, index, parentPath) 
@@ -123,16 +123,18 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
               }
             >
               {item.type === 'dir' && (
-                item.expanded ? <ChevronDown className="w-4 h-4 mr-1 text-gray-400" /> : <ChevronRight className="w-4 h-4 mr-1 text-gray-400" />
+                item.expanded 
+                  ? <ChevronDown className="w-4 h-4 mr-1 text-indigo-400 transition-transform duration-200" /> 
+                  : <ChevronRight className="w-4 h-4 mr-1 text-gray-400 transition-transform duration-200" />
               )}
               {item.type === 'dir' 
-                ? <Folder className="w-4 h-4 mr-2 text-blue-400" /> 
+                ? <Folder className={`w-4 h-4 mr-2 ${item.expanded ? 'text-indigo-400' : 'text-blue-400'}`} /> 
                 : <File className="w-4 h-4 mr-2 text-gray-400" />
               }
               <span className="text-sm truncate">{item.name}</span>
             </div>
             {item.type === 'dir' && item.expanded && item.children && (
-              <div className="ml-4 pl-2 border-l border-gray-700/50">
+              <div className="ml-4 pl-2 border-l border-gray-700/50 mt-1">
                 {renderFileTree(item.children, [...parentPath, item.name])}
               </div>
             )}
@@ -199,24 +201,37 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-6 h-[calc(100vh-12rem)]">
+      <div className="grid grid-cols-5 gap-6 h-[calc(100vh-12rem)]">
         {/* File Tree */}
-        <div className="glass-card rounded-xl p-4 overflow-hidden flex flex-col">
-          <h3 className="text-lg font-semibold mb-3 flex items-center">
-            <Code className="w-5 h-5 mr-2 text-indigo-400" />
-            Repository Files
-          </h3>
-          <div className="overflow-y-auto flex-grow">
+        <div className="glass-card rounded-xl p-4 overflow-hidden flex flex-col col-span-1">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold flex items-center">
+              <Code className="w-5 h-5 mr-2 text-indigo-400" />
+              Repository Files
+            </h3>
+            <div className="flex space-x-2">
+              <button className="p-1.5 rounded-md hover:bg-gray-700/50 text-gray-400 hover:text-white transition-colors">
+                <FolderOpen className="w-4 h-4" />
+              </button>
+              <button className="p-1.5 rounded-md hover:bg-gray-700/50 text-gray-400 hover:text-white transition-colors">
+                <FileText className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+          <div className="overflow-y-auto flex-grow border border-gray-700/30 rounded-lg bg-gray-800/20 p-2">
             {fileTree.length > 0 ? (
               renderFileTree(fileTree)
             ) : (
-              <div className="text-gray-400 text-sm">Loading file structure...</div>
+              <div className="text-gray-400 text-sm flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500 mr-2"></div>
+                Loading file structure...
+              </div>
             )}
           </div>
         </div>
 
         {/* Content Area */}
-        <div className="glass-card rounded-xl p-4 col-span-3 overflow-hidden flex flex-col">
+        <div className="glass-card rounded-xl p-4 col-span-4 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between mb-3">
             <div className="flex space-x-4">
               <button
