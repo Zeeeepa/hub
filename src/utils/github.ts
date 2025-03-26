@@ -13,6 +13,24 @@ export const initializeOctokit = () => {
 // Initialize on load
 initializeOctokit();
 
+export interface GitHubUser {
+  login: string;
+  id: number;
+  avatar_url: string;
+  name: string;
+  bio: string;
+  public_repos: number;
+  followers: number;
+  following: number;
+  created_at: string;
+  updated_at: string;
+  email?: string;
+  location?: string;
+  company?: string;
+  blog?: string;
+  twitter_username?: string;
+}
+
 export interface GitHubRepo {
   id: number;
   name: string;
@@ -39,6 +57,24 @@ export interface GitHubRepo {
   default_branch?: string;
   homepage?: string;
 }
+
+export const getUserProfile = async (username: string): Promise<GitHubUser> => {
+  if (!octokit) throw new Error("Octokit not initialized");
+  
+  try {
+    const response = await octokit.request('GET /users/{username}', {
+      username,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+    
+    return response.data as GitHubUser;
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    throw error;
+  }
+};
 
 export interface RepoDetails {
   languages: Record<string, number>;
@@ -214,7 +250,6 @@ export const getTopicRepositories = async (topic: string): Promise<GitHubRepo[]>
 };
 
 export const getPopularTopics = async (): Promise<string[]> => {
-  // GitHub doesn't have a direct API for popular topics, so we'll use a curated list
   return [
     'machine-learning',
     'react',
@@ -355,9 +390,8 @@ export const getCommitActivity = async (owner: string, repo: string): Promise<Ac
       }
     });
 
-    // Convert the weekly data to a more usable format
     return response.data.slice(-12).map((week: any) => {
-      const date = new Date(week.week * 1000); // Convert Unix timestamp to date
+      const date = new Date(week.week * 1000);
       return {
         date: date.toISOString().split('T')[0],
         commits: week.total
@@ -431,7 +465,6 @@ export const getRepoContents = async (
     });
 
     if (getContent && !Array.isArray(response.data) && response.data.content) {
-      // For file content, decode base64
       return Buffer.from(response.data.content, 'base64').toString('utf-8');
     }
 
@@ -469,7 +502,6 @@ export const getDependencies = async (owner: string, repo: string): Promise<Depe
   if (!octokit) return [];
 
   try {
-    // Try to get package.json for JavaScript/TypeScript projects
     const packageJson = await getRepoContents(owner, repo, 'package.json', true).catch(() => null);
     
     if (packageJson) {
@@ -477,7 +509,6 @@ export const getDependencies = async (owner: string, repo: string): Promise<Depe
         const parsed = JSON.parse(packageJson);
         const dependencies: Dependency[] = [];
         
-        // Process different dependency types
         const addDeps = (deps: Record<string, string>, type: 'runtime' | 'development' | 'peer' | 'optional') => {
           if (!deps) return;
           Object.entries(deps).forEach(([name, version]) => {
@@ -496,7 +527,6 @@ export const getDependencies = async (owner: string, repo: string): Promise<Depe
       }
     }
     
-    // Try requirements.txt for Python projects
     const requirementsTxt = await getRepoContents(owner, repo, 'requirements.txt', true).catch(() => null);
     
     if (requirementsTxt) {
@@ -520,17 +550,11 @@ export const getDependencies = async (owner: string, repo: string): Promise<Depe
   }
 };
 
-// Mock function for symbol tree (would require a more sophisticated parser in a real app)
 export const getSymbolTree = async (owner: string, repo: string): Promise<SymbolTreeItem[]> => {
-  // This is a simplified mock implementation
-  // In a real app, you would use a language server or parser to extract symbols
   return [];
 };
 
-// Mock function for code quality metrics (would require integration with code analysis tools)
 export const getCodeQualityMetrics = async (owner: string, repo: string): Promise<CodeQualityMetrics | null> => {
-  // This is a mock implementation
-  // In a real app, you would integrate with services like SonarQube or CodeClimate
   return {
     codeSmells: Math.floor(Math.random() * 100),
     duplications: Math.floor(Math.random() * 30),
@@ -611,7 +635,6 @@ export const validateGitHubToken = async (token: string): Promise<boolean> => {
   }
 };
 
-// New function to search for similar repositories
 export const getSimilarRepositories = async (owner: string, repo: string): Promise<GitHubRepo[]> => {
   if (!octokit) return [];
 
@@ -661,7 +684,6 @@ export const getSimilarRepositories = async (owner: string, repo: string): Promi
   }
 };
 
-// New function to get repository insights
 export const getRepositoryInsights = async (owner: string, repo: string): Promise<any> => {
   if (!octokit) return null;
 
@@ -704,7 +726,6 @@ export const getRepositoryInsights = async (owner: string, repo: string): Promis
   }
 };
 
-// New function to search for repositories by user
 export const searchUserRepositories = async (username: string): Promise<GitHubRepo[]> => {
   if (!octokit) return [];
 
@@ -725,7 +746,6 @@ export const searchUserRepositories = async (username: string): Promise<GitHubRe
   }
 };
 
-// New function to search for repositories by organization
 export const searchOrganizationRepositories = async (org: string): Promise<GitHubRepo[]> => {
   if (!octokit) return [];
 
