@@ -26,9 +26,33 @@ export interface GitHubRepo {
   language: string;
   owner: {
     avatar_url: string;
+    login: string;
   };
   created_at: string;
   updated_at: string;
+  topics?: string[];
+  license?: {
+    name: string;
+    spdx_id: string;
+  };
+  size?: number;
+  default_branch?: string;
+  homepage?: string;
+}
+
+export interface RepoDetails {
+  languages: Record<string, number>;
+  contributors: number;
+  branches: number;
+  commits: number;
+  readme?: string;
+  topics: string[];
+  pullRequests: number;
+  lastRelease?: {
+    name: string;
+    published_at: string;
+    html_url: string;
+  };
 }
 
 export const searchRepositories = async (query: string): Promise<GitHubRepo[]> => {
@@ -87,6 +111,75 @@ export const getTrendingRepositories = async (
     console.error('Error fetching trending repositories:', error);
     return [];
   }
+};
+
+export const getRecommendedRepositories = async (
+  topics: string[] = [],
+  language: string = ''
+): Promise<GitHubRepo[]> => {
+  if (!octokit) return [];
+
+  try {
+    const topicsQuery = topics.map(topic => `topic:${topic}`).join(' ');
+    const query = `${topicsQuery} ${language ? `language:${language}` : ''} stars:>100`;
+    
+    const response = await octokit.request('GET /search/repositories', {
+      q: query,
+      sort: 'stars',
+      order: 'desc',
+      per_page: 30,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+
+    return response.data.items;
+  } catch (error) {
+    console.error('Error fetching recommended repositories:', error);
+    return [];
+  }
+};
+
+export const getTopicRepositories = async (topic: string): Promise<GitHubRepo[]> => {
+  if (!octokit) return [];
+
+  try {
+    const response = await octokit.request('GET /search/repositories', {
+      q: `topic:${topic}`,
+      sort: 'stars',
+      order: 'desc',
+      per_page: 30,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+
+    return response.data.items;
+  } catch (error) {
+    console.error('Error fetching topic repositories:', error);
+    return [];
+  }
+};
+
+export const getPopularTopics = async (): Promise<string[]> => {
+  // GitHub doesn't have a direct API for popular topics, so we'll use a curated list
+  return [
+    'machine-learning',
+    'react',
+    'typescript',
+    'python',
+    'javascript',
+    'ai',
+    'web-development',
+    'data-science',
+    'blockchain',
+    'mobile-app',
+    'game-development',
+    'devops',
+    'cloud',
+    'backend',
+    'frontend'
+  ];
 };
 
 export const getLanguages = async (owner: string, repo: string): Promise<Record<string, number>> => {
@@ -172,6 +265,110 @@ export const getCommits = async (owner: string, repo: string): Promise<number> =
     console.error('Error fetching commits:', error);
     return 0;
   }
+};
+
+export const getPullRequests = async (owner: string, repo: string): Promise<number> => {
+  if (!octokit) return 0;
+
+  try {
+    const response = await octokit.request('GET /repos/{owner}/{repo}/pulls', {
+      owner,
+      repo,
+      state: 'all',
+      per_page: 1,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+
+    const linkHeader = response.headers.link || '';
+    const match = linkHeader.match(/&page=(\d+)>; rel="last"/);
+    return match ? parseInt(match[1]) : 1;
+  } catch (error) {
+    console.error('Error fetching pull requests:', error);
+    return 0;
+  }
+};
+
+export const getReadme = async (owner: string, repo: string): Promise<string | null> => {
+  if (!octokit) return null;
+
+  try {
+    const response = await octokit.request('GET /repos/{owner}/{repo}/readme', {
+      owner,
+      repo,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Accept': 'application/vnd.github.html'
+      }
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching readme:', error);
+    return null;
+  }
+};
+
+export const getLatestRelease = async (owner: string, repo: string): Promise<any | null> => {
+  if (!octokit) return null;
+
+  try {
+    const response = await octokit.request('GET /repos/{owner}/{repo}/releases/latest', {
+      owner,
+      repo,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+
+    return {
+      name: response.data.name,
+      published_at: response.data.published_at,
+      html_url: response.data.html_url
+    };
+  } catch (error) {
+    console.error('Error fetching latest release:', error);
+    return null;
+  }
+};
+
+export const getRepoDetails = async (owner: string, repo: string): Promise<RepoDetails> => {
+  const [languages, contributors, branches, commits, pullRequests, readme, latestRelease] = await Promise.all([
+    getLanguages(owner, repo),
+    getContributors(owner, repo),
+    getBranches(owner, repo),
+    getCommits(owner, repo),
+    getPullRequests(owner, repo),
+    getReadme(owner, repo).catch(() => null),
+    getLatestRelease(owner, repo).catch(() => null)
+  ]);
+
+  // Get repository to fetch topics
+  let topics: string[] = [];
+  try {
+    const repoResponse = await octokit.request('GET /repos/{owner}/{repo}', {
+      owner,
+      repo,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+    topics = repoResponse.data.topics || [];
+  } catch (error) {
+    console.error('Error fetching repository details:', error);
+  }
+
+  return {
+    languages,
+    contributors,
+    branches,
+    commits,
+    readme,
+    topics,
+    pullRequests,
+    lastRelease: latestRelease
+  };
 };
 
 export const validateGitHubToken = async (token: string): Promise<boolean> => {
