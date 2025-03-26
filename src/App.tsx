@@ -44,6 +44,7 @@ type Project = {
   category: string;
   url: string;
   logo?: string;
+  owner: string;
   stats: {
     stars: number;
     forks: number;
@@ -54,8 +55,18 @@ type Project = {
   contributors: number;
   branches: number;
   commits: number;
+  pullRequests: number;
   categories: Category[];
   languages: { name: string; percentage: number }[];
+  topics: string[];
+  license?: string;
+  size?: number;
+  lastRelease?: {
+    name: string;
+    published_at: string;
+    url: string;
+  };
+  homepage?: string;
 };
 
 function App() {
@@ -183,10 +194,13 @@ function App() {
               className="w-8 h-8 rounded-lg object-cover"
             />
           )}
-          <h3 className="text-lg font-semibold flex items-center space-x-2 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent group-hover:from-indigo-300 group-hover:to-purple-300 transition-all duration-300">
-            <span>{project.name}</span>
-            <ChevronRight className="w-4 h-4 text-purple-400 group-hover:translate-x-1 transition-transform duration-300" />
-          </h3>
+          <div>
+            <h3 className="text-lg font-semibold flex items-center space-x-2 bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent group-hover:from-indigo-300 group-hover:to-purple-300 transition-all duration-300">
+              <span>{project.name}</span>
+              <ChevronRight className="w-4 h-4 text-purple-400 group-hover:translate-x-1 transition-transform duration-300" />
+            </h3>
+            <div className="text-xs text-gray-500">by {project.owner}</div>
+          </div>
         </div>
         <div className="flex space-x-2">
           <button className="card-action-button">
@@ -206,21 +220,62 @@ function App() {
           </button>
         </div>
       </div>
-      <p className="text-gray-400">{project.description}</p>
-      <div className="flex items-center space-x-4 text-sm text-gray-400">
-        <span className="flex items-center space-x-1">
-          <Star className="w-4 h-4 text-yellow-400" />
-          <span>{project.stats.stars}</span>
-        </span>
-        <span className="flex items-center space-x-1">
-          <GitFork className="w-4 h-4 text-blue-400" />
-          <span>{project.stats.forks}</span>
-        </span>
-        <span className="flex items-center space-x-1">
-          <Eye className="w-4 h-4 text-green-400" />
-          <span>{project.stats.watchers}</span>
-        </span>
+      <p className="text-gray-400 mt-2 line-clamp-2">{project.description}</p>
+      
+      <div className="flex flex-wrap gap-2 mt-3">
+        {project.topics?.slice(0, 3).map((topic, index) => (
+          <span
+            key={index}
+            className="px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30"
+          >
+            {topic}
+          </span>
+        ))}
       </div>
+      
+      <div className="grid grid-cols-2 gap-2 mt-3">
+        <div className="flex items-center space-x-1 text-sm text-gray-400">
+          <Star className="w-4 h-4 text-yellow-400" />
+          <span>{project.stats.stars.toLocaleString()}</span>
+        </div>
+        <div className="flex items-center space-x-1 text-sm text-gray-400">
+          <GitFork className="w-4 h-4 text-blue-400" />
+          <span>{project.stats.forks.toLocaleString()}</span>
+        </div>
+        <div className="flex items-center space-x-1 text-sm text-gray-400">
+          <Eye className="w-4 h-4 text-green-400" />
+          <span>{project.stats.watchers.toLocaleString()}</span>
+        </div>
+        <div className="flex items-center space-x-1 text-sm text-gray-400">
+          <GitCommit className="w-4 h-4 text-purple-400" />
+          <span>{project.commits.toLocaleString()}</span>
+        </div>
+      </div>
+      
+      {project.languages.length > 0 && (
+        <div className="mt-3">
+          <div className="flex h-2 rounded-full overflow-hidden">
+            {project.languages.slice(0, 5).map((lang, index) => (
+              <div
+                key={index}
+                className="h-full"
+                style={{
+                  width: `${lang.percentage}%`,
+                  backgroundColor: getLanguageColor(lang.name)
+                }}
+                title={`${lang.name}: ${lang.percentage}%`}
+              />
+            ))}
+          </div>
+          <div className="flex justify-between mt-1 text-xs text-gray-500">
+            <span>{project.languages[0]?.name}</span>
+            {project.languages.length > 1 && (
+              <span>+{project.languages.length - 1} more</span>
+            )}
+          </div>
+        </div>
+      )}
+      
       <div className="flex flex-wrap gap-2 mt-3">
         {project.categories?.map((category) => (
           <span
@@ -235,6 +290,11 @@ function App() {
             {category.name}
           </span>
         ))}
+      </div>
+      
+      <div className="mt-3 text-xs text-gray-500 flex justify-between">
+        <span>Updated: {new Date(project.lastActivity).toLocaleDateString()}</span>
+        {project.license && <span>{project.license}</span>}
       </div>
     </div>
   );
@@ -278,15 +338,44 @@ function App() {
               className="w-16 h-16 rounded-xl object-cover"
             />
           )}
-          <div>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-              {project.name}
-            </h2>
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                {project.name}
+              </h2>
+              {project.license && (
+                <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-500/20 text-green-400 border border-green-500/30">
+                  {project.license}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center mt-1 text-gray-400">
+              <span className="text-sm">by {project.owner}</span>
+              {project.homepage && (
+                <a 
+                  href={project.homepage} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="ml-4 flex items-center space-x-1 text-indigo-400 hover:text-indigo-300 transition-colors text-sm"
+                >
+                  <span>Homepage</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </div>
             <p className="text-gray-400 mt-2">{project.description}</p>
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
+          {project.topics?.map((topic, index) => (
+            <span
+              key={index}
+              className="px-3 py-1.5 rounded-full text-sm font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30"
+            >
+              {topic}
+            </span>
+          ))}
           {project.categories?.map((category) => (
             <span
               key={category.id}
@@ -304,11 +393,46 @@ function App() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="stat-card">
-            <div className="flex items-center space-x-2 text-purple-400">
-              <Activity className="w-5 h-5" />
-              <span className="font-medium">Activity</span>
+            <div className="flex items-center space-x-2 text-yellow-400">
+              <Star className="w-5 h-5" />
+              <span className="font-medium">Stars</span>
             </div>
-            <div className="text-2xl font-bold">{project.commits}</div>
+            <div className="text-2xl font-bold">{project.stats.stars.toLocaleString()}</div>
+            <div className="text-sm text-gray-400">GitHub Stars</div>
+          </div>
+          <div className="stat-card">
+            <div className="flex items-center space-x-2 text-blue-400">
+              <GitFork className="w-5 h-5" />
+              <span className="font-medium">Forks</span>
+            </div>
+            <div className="text-2xl font-bold">{project.stats.forks.toLocaleString()}</div>
+            <div className="text-sm text-gray-400">GitHub Forks</div>
+          </div>
+          <div className="stat-card">
+            <div className="flex items-center space-x-2 text-green-400">
+              <Eye className="w-5 h-5" />
+              <span className="font-medium">Watchers</span>
+            </div>
+            <div className="text-2xl font-bold">{project.stats.watchers.toLocaleString()}</div>
+            <div className="text-sm text-gray-400">GitHub Watchers</div>
+          </div>
+          <div className="stat-card">
+            <div className="flex items-center space-x-2 text-red-400">
+              <Activity className="w-5 h-5" />
+              <span className="font-medium">Issues</span>
+            </div>
+            <div className="text-2xl font-bold">{project.stats.issues.toLocaleString()}</div>
+            <div className="text-sm text-gray-400">Open Issues</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="stat-card">
+            <div className="flex items-center space-x-2 text-purple-400">
+              <GitCommit className="w-5 h-5" />
+              <span className="font-medium">Commits</span>
+            </div>
+            <div className="text-2xl font-bold">{project.commits.toLocaleString()}</div>
             <div className="text-sm text-gray-400">Total Commits</div>
           </div>
           <div className="stat-card">
@@ -316,7 +440,7 @@ function App() {
               <Users className="w-5 h-5" />
               <span className="font-medium">Team</span>
             </div>
-            <div className="text-2xl font-bold">{project.contributors}</div>
+            <div className="text-2xl font-bold">{project.contributors.toLocaleString()}</div>
             <div className="text-sm text-gray-400">Contributors</div>
           </div>
           <div className="stat-card">
@@ -324,7 +448,7 @@ function App() {
               <Branch className="w-5 h-5" />
               <span className="font-medium">Branches</span>
             </div>
-            <div className="text-2xl font-bold">{project.branches}</div>
+            <div className="text-2xl font-bold">{project.branches.toLocaleString()}</div>
             <div className="text-sm text-gray-400">Active Branches</div>
           </div>
           <div className="stat-card">
@@ -337,9 +461,45 @@ function App() {
           </div>
         </div>
 
+        {project.lastRelease && (
+          <div className="glass-card p-4 rounded-xl">
+            <h3 className="text-lg font-semibold mb-2">Latest Release</h3>
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="font-medium text-indigo-400">{project.lastRelease.name}</div>
+                <div className="text-sm text-gray-400">
+                  Released on {new Date(project.lastRelease.published_at).toLocaleDateString()}
+                </div>
+              </div>
+              <a 
+                href={project.lastRelease.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="btn-secondary"
+              >
+                <span>View Release</span>
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4">
           <h3 className="text-xl font-semibold">Languages</h3>
-          <div className="space-y-4">
+          <div className="flex h-4 rounded-full overflow-hidden">
+            {project.languages.slice(0, 10).map((lang, index) => (
+              <div
+                key={index}
+                className="h-full"
+                style={{
+                  width: `${lang.percentage}%`,
+                  backgroundColor: getLanguageColor(lang.name)
+                }}
+                title={`${lang.name}: ${lang.percentage}%`}
+              />
+            ))}
+          </div>
+          <div className="space-y-4 mt-4">
             {project.languages.map(lang => (
               <div key={lang.name} className="space-y-2">
                 <div className="flex justify-between text-sm">
@@ -349,7 +509,10 @@ function App() {
                 <div className="progress-bar">
                   <div 
                     className="progress-value"
-                    style={{ width: `${lang.percentage}%` }}
+                    style={{ 
+                      width: `${lang.percentage}%`,
+                      backgroundColor: getLanguageColor(lang.name)
+                    }}
                   />
                 </div>
               </div>
@@ -379,6 +542,30 @@ function App() {
       </div>
     </div>
   );
+
+  const getLanguageColor = (language: string): string => {
+    const colors: Record<string, string> = {
+      JavaScript: '#f1e05a',
+      TypeScript: '#3178c6',
+      Python: '#3572A5',
+      Java: '#b07219',
+      Go: '#00ADD8',
+      Rust: '#dea584',
+      'C++': '#f34b7d',
+      PHP: '#4F5D95',
+      Ruby: '#701516',
+      HTML: '#e34c26',
+      CSS: '#563d7c',
+      Shell: '#89e051',
+      Swift: '#ffac45',
+      Kotlin: '#A97BFF',
+      Dart: '#00B4AB',
+      C: '#555555',
+      'C#': '#178600'
+    };
+    
+    return colors[language] || '#8257e5'; // Default purple color
+  };
 
   return (
     <div className="min-h-screen">
