@@ -258,7 +258,7 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-6 h-[calc(100vh-12rem)]">
+      <div className="grid grid-cols-4 gap-6 h-[calc(100vh-12rem)]">
         {/* File/Symbol Tree */}
         <div className="glass-card rounded-xl p-4 overflow-hidden flex flex-col col-span-1">
           <div className="flex items-center justify-between mb-3">
@@ -318,7 +318,7 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
         </div>
 
         {/* Content Area */}
-        <div className="glass-card rounded-xl p-4 col-span-4 overflow-hidden flex flex-col">
+        <div className="glass-card rounded-xl p-4 col-span-3 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between mb-3">
             <div className="flex space-x-4">
               <button
