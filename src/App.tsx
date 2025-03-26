@@ -24,7 +24,9 @@ import {
   FileText,
   Book,
   BarChart,
-  Globe
+  Globe,
+  Laptop,
+  Zap
 } from 'lucide-react';
 import CategoryDialog from './components/CategoryDialog';
 import SearchBar from './components/SearchBar';
@@ -33,9 +35,12 @@ import GitHubSettings from './components/GitHubSettings';
 import AddProjectDialog from './components/AddProjectDialog';
 import ProjectReadme from './components/ProjectReadme';
 import GitHubDiscovery from './components/GitHubDiscovery';
+import LocalProjectDiscovery from './components/LocalProjectDiscovery';
+import SemanticCodeSearch from './components/SemanticCodeSearch';
 import { v4 as uuidv4 } from 'uuid';
 import { getSaveLocation, setSaveLocation, getProjects, setProjects, getCategories, setCategories } from './utils/store';
 import { searchRepositories, getTrendingRepositories, GitHubRepo } from './utils/github';
+import { LocalProject } from './utils/localProjects';
 
 type Category = {
   id: string;
@@ -76,8 +81,9 @@ type Project = {
 };
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'projects' | 'settings' | 'discover'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'settings' | 'discover' | 'local' | 'code-search'>('projects');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [selectedLocalProject, setSelectedLocalProject] = useState<LocalProject | null>(null);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isAddProjectDialogOpen, setIsAddProjectDialogOpen] = useState(false);
   const [saveLocation, setSaveLocationState] = useState(getSaveLocation());
@@ -192,6 +198,10 @@ function App() {
 
   const handleSelectGitHubRepo = (repo: GitHubRepo) => {
     window.open(repo.html_url, '_blank');
+  };
+
+  const handleSelectLocalProject = (project: LocalProject) => {
+    setSelectedLocalProject(project);
   };
 
   const ProjectCard = ({ project }: { project: Project }) => (
@@ -602,6 +612,18 @@ function App() {
           <Globe className="w-6 h-6" />
         </button>
         <button
+          onClick={() => setActiveTab('local')}
+          className={`nav-button ${activeTab === 'local' ? 'active' : ''}`}
+        >
+          <Laptop className="w-6 h-6" />
+        </button>
+        <button
+          onClick={() => setActiveTab('code-search')}
+          className={`nav-button ${activeTab === 'code-search' ? 'active' : ''}`}
+        >
+          <Zap className="w-6 h-6" />
+        </button>
+        <button
           onClick={() => setActiveTab('settings')}
           className={`nav-button ${activeTab === 'settings' ? 'active' : ''}`}
         >
@@ -667,6 +689,24 @@ function App() {
             <GitHubDiscovery 
               onSelectRepo={handleSelectGitHubRepo}
               currentRepo={selectedProject ? { owner: selectedProject.owner, name: selectedProject.name } : null}
+            />
+          </div>
+        ) : activeTab === 'local' ? (
+          <div className="space-y-6">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              Local Projects
+            </h1>
+            <LocalProjectDiscovery 
+              onSelectProject={handleSelectLocalProject}
+            />
+          </div>
+        ) : activeTab === 'code-search' ? (
+          <div className="space-y-6">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              Semantic Code Search
+            </h1>
+            <SemanticCodeSearch 
+              projectPath={selectedLocalProject?.path}
             />
           </div>
         ) : (
@@ -762,3 +802,4 @@ function App() {
 }
 
 export default App;
+
