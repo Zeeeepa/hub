@@ -53,6 +53,14 @@ export interface RepoDetails {
     published_at: string;
     html_url: string;
   };
+  relatedRepos?: GitHubRepo[];
+  dependents?: GitHubRepo[];
+  codeExamples?: {
+    title: string;
+    url: string;
+    code: string;
+    language: string;
+  }[];
 }
 
 export interface RepoContent {
@@ -67,6 +75,18 @@ export interface RepoContent {
   type: 'file' | 'dir';
   content?: string;
   encoding?: string;
+}
+
+export interface GitHubUser {
+  login: string;
+  id: number;
+  avatar_url: string;
+  html_url: string;
+  name?: string;
+  bio?: string;
+  public_repos: number;
+  followers: number;
+  following: number;
 }
 
 export const searchRepositories = async (query: string): Promise<GitHubRepo[]> => {
@@ -192,7 +212,12 @@ export const getPopularTopics = async (): Promise<string[]> => {
     'devops',
     'cloud',
     'backend',
-    'frontend'
+    'frontend',
+    'llm',
+    'agents',
+    'rag',
+    'vector-database',
+    'embeddings'
   ];
 };
 
@@ -377,15 +402,178 @@ export const getLatestRelease = async (owner: string, repo: string): Promise<any
   }
 };
 
+export const getRelatedRepositories = async (owner: string, repo: string): Promise<GitHubRepo[]> => {
+  if (!octokit) return [];
+
+  try {
+    // Get the repository to fetch topics
+    const repoResponse = await octokit.request('GET /repos/{owner}/{repo}', {
+      owner,
+      repo,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+    
+    const topics = repoResponse.data.topics || [];
+    const language = repoResponse.data.language;
+    
+    if (topics.length === 0 && !language) return [];
+    
+    // Build a query based on topics and language
+    let query = '';
+    if (topics.length > 0) {
+      // Use up to 3 topics to avoid too narrow results
+      const topicsToUse = topics.slice(0, 3);
+      query = topicsToUse.map(topic => `topic:${topic}`).join(' ');
+    }
+    
+    if (language) {
+      query += ` language:${language}`;
+    }
+    
+    // Exclude the current repository
+    query += ` -repo:${owner}/${repo}`;
+    
+    const response = await octokit.request('GET /search/repositories', {
+      q: query,
+      sort: 'stars',
+      order: 'desc',
+      per_page: 5,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+
+    return response.data.items;
+  } catch (error) {
+    console.error('Error fetching related repositories:', error);
+    return [];
+  }
+};
+
+export const getDependentRepositories = async (owner: string, repo: string): Promise<GitHubRepo[]> => {
+  if (!octokit) return [];
+
+  try {
+    // Search for repositories that depend on this one
+    const query = `dependency:${owner}/${repo}`;
+    
+    const response = await octokit.request('GET /search/repositories', {
+      q: query,
+      sort: 'stars',
+      order: 'desc',
+      per_page: 5,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+
+    return response.data.items;
+  } catch (error) {
+    console.error('Error fetching dependent repositories:', error);
+    return [];
+  }
+};
+
+export const getSymbolTree = async (owner: string, repo: string, path: string): Promise<any> => {
+  if (!octokit) return null;
+
+  try {
+    // This is a simplified approach as GitHub API doesn't directly provide a symbol tree
+    // In a real implementation, you might use a language server or parser
+    const fileContent = await getRepoContents(owner, repo, path, true);
+    
+    if (typeof fileContent !== 'string') return null;
+    
+    // Simple regex-based parsing for demonstration purposes
+    // This would be replaced with proper parsing in a real implementation
+    const symbols = {
+      classes: [],
+      functions: [],
+      variables: []
+    };
+    
+    // Extract class definitions (very simplified)
+    const classMatches = fileContent.match(/class\s+(\w+)/g);
+    if (classMatches) {
+      symbols.classes = classMatches.map(match => match.replace('class ', '').trim());
+    }
+    
+    // Extract function definitions (very simplified)
+    const functionMatches = fileContent.match(/function\s+(\w+)|def\s+(\w+)/g);
+    if (functionMatches) {
+      symbols.functions = functionMatches.map(match => 
+        match.replace('function ', '').replace('def ', '').trim()
+      );
+    }
+    
+    return symbols;
+  } catch (error) {
+    console.error('Error fetching symbol tree:', error);
+    return null;
+  }
+};
+
+export const getUserProfile = async (username: string): Promise<GitHubUser | null> => {
+  if (!octokit) return null;
+
+  try {
+    const response = await octokit.request('GET /users/{username}', {
+      username,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    return null;
+  }
+};
+
+export const getUserRepositories = async (username: string): Promise<GitHubRepo[]> => {
+  if (!octokit) return [];
+
+  try {
+    const response = await octokit.request('GET /users/{username}/repos', {
+      username,
+      sort: 'updated',
+      per_page: 10,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user repositories:', error);
+    return [];
+  }
+};
+
 export const getRepoDetails = async (owner: string, repo: string): Promise<RepoDetails> => {
-  const [languages, contributors, branches, commits, pullRequests, readme, latestRelease] = await Promise.all([
+  const [
+    languages, 
+    contributors, 
+    branches, 
+    commits, 
+    pullRequests, 
+    readme, 
+    latestRelease,
+    relatedRepos,
+    dependentRepos
+  ] = await Promise.all([
     getLanguages(owner, repo),
     getContributors(owner, repo),
     getBranches(owner, repo),
     getCommits(owner, repo),
     getPullRequests(owner, repo),
     getReadme(owner, repo).catch(() => null),
-    getLatestRelease(owner, repo).catch(() => null)
+    getLatestRelease(owner, repo).catch(() => null),
+    getRelatedRepositories(owner, repo).catch(() => []),
+    getDependentRepositories(owner, repo).catch(() => [])
   ]);
 
   // Get repository to fetch topics
@@ -411,7 +599,9 @@ export const getRepoDetails = async (owner: string, repo: string): Promise<RepoD
     readme,
     topics,
     pullRequests,
-    lastRelease: latestRelease
+    lastRelease: latestRelease,
+    relatedRepos,
+    dependents: dependentRepos
   };
 };
 

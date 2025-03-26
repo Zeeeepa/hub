@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { File, Folder, ChevronRight, ChevronDown, ArrowLeft, ExternalLink, Code, FileText } from 'lucide-react';
-import { getReadme, getRepoContents } from '../utils/github';
+import { File, Folder, ChevronRight, ChevronDown, ArrowLeft, ExternalLink, Code, FileText, Layers, GitBranch } from 'lucide-react';
+import { getReadme, getRepoContents, getRepoDetails, GitHubRepo } from '../utils/github';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import SymbolTreeView from './SymbolTreeView';
+import RelatedRepos from './RelatedRepos';
 
 interface ProjectReadmeProps {
   owner: string;
@@ -26,6 +28,10 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
   const [fileTree, setFileTree] = useState<FileTreeItem[]>([]);
   const [selectedFile, setSelectedFile] = useState<{ path: string; content: string; name: string } | null>(null);
   const [activeView, setActiveView] = useState<'readme' | 'file'>('readme');
+  const [showSymbolTree, setShowSymbolTree] = useState(false);
+  const [relatedRepos, setRelatedRepos] = useState<GitHubRepo[]>([]);
+  const [dependentRepos, setDependentRepos] = useState<GitHubRepo[]>([]);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(true);
 
   useEffect(() => {
     const fetchReadme = async () => {
@@ -50,7 +56,25 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
       }
     };
 
+    const fetchRepoDetails = async () => {
+      setIsLoadingDetails(true);
+      try {
+        const details = await getRepoDetails(owner, repo);
+        if (details.relatedRepos) {
+          setRelatedRepos(details.relatedRepos);
+        }
+        if (details.dependents) {
+          setDependentRepos(details.dependents);
+        }
+      } catch (error) {
+        console.error('Error fetching repo details:', error);
+      } finally {
+        setIsLoadingDetails(false);
+      }
+    };
+
     fetchReadme();
+    fetchRepoDetails();
   }, [owner, repo]);
 
   const toggleDirectory = async (item: FileTreeItem, index: number, parentPath: string[] = []) => {
@@ -178,6 +202,10 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
     return languageMap[ext.toLowerCase()] || 'text';
   };
 
+  const handleSelectRepo = (selectedRepo: GitHubRepo) => {
+    window.open(selectedRepo.html_url, '_blank');
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
@@ -210,28 +238,48 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
               Repository Files
             </h3>
             <div className="flex space-x-2">
-              <button className="p-1.5 rounded-md hover:bg-gray-700/50 text-gray-400 hover:text-white transition-colors">
-                <FolderOpen className="w-4 h-4" />
+              <button 
+                className={`p-1.5 rounded-md hover:bg-gray-700/50 transition-colors ${
+                  showSymbolTree ? 'bg-indigo-600/20 text-indigo-300' : 'text-gray-400 hover:text-white'
+                }`}
+                onClick={() => setShowSymbolTree(!showSymbolTree)}
+                title="Toggle Symbol Tree"
+              >
+                <Layers className="w-4 h-4" />
               </button>
-              <button className="p-1.5 rounded-md hover:bg-gray-700/50 text-gray-400 hover:text-white transition-colors">
-                <FileText className="w-4 h-4" />
+              <button 
+                className="p-1.5 rounded-md hover:bg-gray-700/50 text-gray-400 hover:text-white transition-colors"
+                title="Expand All"
+              >
+                <GitBranch className="w-4 h-4" />
               </button>
             </div>
           </div>
-          <div className="overflow-y-auto flex-grow border border-gray-700/30 rounded-lg bg-gray-800/20 p-2">
-            {fileTree.length > 0 ? (
-              renderFileTree(fileTree)
-            ) : (
-              <div className="text-gray-400 text-sm flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500 mr-2"></div>
-                Loading file structure...
-              </div>
-            )}
-          </div>
+          
+          {showSymbolTree && selectedFile ? (
+            <div className="overflow-y-auto flex-grow border border-gray-700/30 rounded-lg bg-gray-800/20 p-2">
+              <SymbolTreeView 
+                owner={owner} 
+                repo={repo} 
+                path={selectedFile.path} 
+              />
+            </div>
+          ) : (
+            <div className="overflow-y-auto flex-grow border border-gray-700/30 rounded-lg bg-gray-800/20 p-2">
+              {fileTree.length > 0 ? (
+                renderFileTree(fileTree)
+              ) : (
+                <div className="text-gray-400 text-sm flex items-center justify-center h-full">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500 mr-2"></div>
+                  Loading file structure...
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Content Area */}
-        <div className="glass-card rounded-xl p-4 col-span-4 overflow-hidden flex flex-col">
+        <div className="glass-card rounded-xl p-4 col-span-3 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between mb-3">
             <div className="flex space-x-4">
               <button
@@ -297,6 +345,32 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
               </div>
             )}
           </div>
+        </div>
+
+        {/* Related Repositories */}
+        <div className="col-span-1 space-y-6 overflow-y-auto">
+          {isLoadingDetails ? (
+            <div className="glass-card p-4 rounded-xl flex items-center justify-center h-24">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500 mr-2"></div>
+              <span className="text-sm text-gray-400">Loading related data...</span>
+            </div>
+          ) : (
+            <>
+              <RelatedRepos 
+                repos={relatedRepos}
+                title="Similar Repositories"
+                emptyMessage="No similar repositories found"
+                onSelectRepo={handleSelectRepo}
+              />
+              
+              <RelatedRepos 
+                repos={dependentRepos}
+                title="Dependent Projects"
+                emptyMessage="No dependent projects found"
+                onSelectRepo={handleSelectRepo}
+              />
+            </>
+          )}
         </div>
       </div>
     </div>

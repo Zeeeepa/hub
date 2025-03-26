@@ -22,11 +22,13 @@ import {
   Tag,
   FolderOpen,
   FileText,
-  Book
+  Book,
+  Compass
 } from 'lucide-react';
 import CategoryDialog from './components/CategoryDialog';
 import SearchBar from './components/SearchBar';
 import CategoryFilter from './components/CategoryFilter';
+import AdvancedGitHubSearch from './components/AdvancedGitHubSearch';
 import GitHubSettings from './components/GitHubSettings';
 import AddProjectDialog from './components/AddProjectDialog';
 import ProjectReadme from './components/ProjectReadme';
@@ -73,7 +75,7 @@ type Project = {
 };
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'projects' | 'settings'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'settings' | 'discover'>('projects');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isAddProjectDialogOpen, setIsAddProjectDialogOpen] = useState(false);
@@ -578,6 +580,38 @@ function App() {
     return colors[language] || '#8257e5'; // Default purple color
   };
 
+  const handleSelectGitHubRepo = (repo: GitHubRepo) => {
+    const newProject: Project = {
+      id: uuidv4(),
+      name: repo.name,
+      description: repo.description || '',
+      category: '',
+      url: repo.html_url,
+      logo: repo.owner.avatar_url,
+      owner: repo.owner.login,
+      stats: {
+        stars: repo.stargazers_count,
+        forks: repo.forks_count,
+        watchers: repo.watchers_count,
+        issues: repo.open_issues_count
+      },
+      lastActivity: repo.updated_at,
+      contributors: 0,
+      branches: 0,
+      commits: 0,
+      pullRequests: 0,
+      categories: [],
+      languages: [],
+      topics: repo.topics || [],
+      license: repo.license?.name,
+      size: repo.size,
+      homepage: repo.homepage
+    };
+    
+    addProject(newProject);
+    setActiveTab('projects');
+  };
+
   return (
     <div className="min-h-screen">
       {/* Sidebar */}
@@ -587,6 +621,12 @@ function App() {
           className={`nav-button ${activeTab === 'projects' ? 'active' : ''}`}
         >
           <Github className="w-6 h-6" />
+        </button>
+        <button
+          onClick={() => setActiveTab('discover')}
+          className={`nav-button ${activeTab === 'discover' ? 'active' : ''}`}
+        >
+          <Compass className="w-6 h-6" />
         </button>
         <button
           onClick={() => setActiveTab('settings')}
@@ -607,11 +647,6 @@ function App() {
                     GitHub Projects
                   </h1>
                   <div className="flex space-x-4">
-                    <SearchBar
-                      placeholder="Search GitHub projects..."
-                      value={githubSearch}
-                      onChange={setGithubSearch}
-                    />
                     <SearchBar
                       placeholder="Search local projects..."
                       value={projectSearch}
@@ -650,6 +685,13 @@ function App() {
                 />
               )
             )}
+          </div>
+        ) : activeTab === 'discover' ? (
+          <div className="space-y-6">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              Discover GitHub Projects
+            </h1>
+            <AdvancedGitHubSearch onSelectRepo={handleSelectGitHubRepo} />
           </div>
         ) : (
           <div className="space-y-6">
