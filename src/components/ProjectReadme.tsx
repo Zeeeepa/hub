@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { File, Folder, ChevronRight, ChevronDown, ArrowLeft, ExternalLink, Code, FileText, Layers, GitBranch } from 'lucide-react';
-import { getReadme, getRepoContents, getRepoDetails, GitHubRepo } from '../utils/github';
+import { File, Folder, ChevronRight, ChevronDown, ArrowLeft, ExternalLink, Code, FileText, BookOpen, GitBranch, Hash, Box, Layers } from 'lucide-react';
+import { getReadme, getRepoContents, getSymbolTree, SymbolTreeItem } from '../utils/github';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import SymbolTreeView from './SymbolTreeView';
-import RelatedRepos from './RelatedRepos';
 
 interface ProjectReadmeProps {
   owner: string;
@@ -26,12 +24,10 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
   const [readme, setReadme] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [fileTree, setFileTree] = useState<FileTreeItem[]>([]);
+  const [symbolTree, setSymbolTree] = useState<SymbolTreeItem[]>([]);
   const [selectedFile, setSelectedFile] = useState<{ path: string; content: string; name: string } | null>(null);
   const [activeView, setActiveView] = useState<'readme' | 'file'>('readme');
-  const [showSymbolTree, setShowSymbolTree] = useState(false);
-  const [relatedRepos, setRelatedRepos] = useState<GitHubRepo[]>([]);
-  const [dependentRepos, setDependentRepos] = useState<GitHubRepo[]>([]);
-  const [isLoadingDetails, setIsLoadingDetails] = useState(true);
+  const [activeTreeView, setActiveTreeView] = useState<'files' | 'symbols'>('files');
 
   useEffect(() => {
     const fetchReadme = async () => {
@@ -49,6 +45,10 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
           expanded: false,
           children: item.type === 'dir' ? [] : undefined
         })));
+
+        // Fetch symbol tree (mock implementation)
+        const symbols = await getSymbolTree(owner, repo);
+        setSymbolTree(symbols);
       } catch (error) {
         console.error('Error fetching readme:', error);
       } finally {
@@ -56,25 +56,7 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
       }
     };
 
-    const fetchRepoDetails = async () => {
-      setIsLoadingDetails(true);
-      try {
-        const details = await getRepoDetails(owner, repo);
-        if (details.relatedRepos) {
-          setRelatedRepos(details.relatedRepos);
-        }
-        if (details.dependents) {
-          setDependentRepos(details.dependents);
-        }
-      } catch (error) {
-        console.error('Error fetching repo details:', error);
-      } finally {
-        setIsLoadingDetails(false);
-      }
-    };
-
     fetchReadme();
-    fetchRepoDetails();
   }, [owner, repo]);
 
   const toggleDirectory = async (item: FileTreeItem, index: number, parentPath: string[] = []) => {
@@ -168,6 +150,57 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
     );
   };
 
+  const renderSymbolTree = (items: SymbolTreeItem[]) => {
+    return (
+      <ul className="space-y-1">
+        {items.map((item, index) => (
+          <li key={`${item.path}-${item.line}-${index}`} className="select-none">
+            <div 
+              className="flex items-center py-1.5 px-2 rounded-md hover:bg-gray-700/50 cursor-pointer transition-colors duration-150"
+              onClick={() => {
+                // In a real implementation, this would navigate to the file and line
+                console.log(`Navigate to ${item.path}:${item.line}`);
+              }}
+            >
+              {item.children && item.children.length > 0 && (
+                <ChevronRight className="w-4 h-4 mr-1 text-gray-400" />
+              )}
+              {getSymbolIcon(item.kind)}
+              <span className="text-sm truncate ml-2">{item.name}</span>
+              <span className="text-xs text-gray-500 ml-auto">{getSymbolKindLabel(item.kind)}</span>
+            </div>
+            {item.children && item.children.length > 0 && (
+              <div className="ml-4 pl-2 border-l border-gray-700/50 mt-1">
+                {renderSymbolTree(item.children)}
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
+  const getSymbolIcon = (kind: string) => {
+    switch (kind) {
+      case 'class':
+        return <Box className="w-4 h-4 text-purple-400" />;
+      case 'function':
+        return <Code className="w-4 h-4 text-green-400" />;
+      case 'variable':
+        return <Hash className="w-4 h-4 text-blue-400" />;
+      case 'interface':
+        return <Layers className="w-4 h-4 text-yellow-400" />;
+      case 'enum':
+        return <GitBranch className="w-4 h-4 text-red-400" />;
+      default:
+        return <FileText className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
+  const getSymbolKindLabel = (kind: string): string => {
+    return kind.charAt(0).toUpperCase() + kind.slice(1);
+  };
+
   const getFileExtension = (filename: string) => {
     return filename.split('.').pop() || '';
   };
@@ -202,10 +235,6 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
     return languageMap[ext.toLowerCase()] || 'text';
   };
 
-  const handleSelectRepo = (selectedRepo: GitHubRepo) => {
-    window.open(selectedRepo.html_url, '_blank');
-  };
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">
@@ -230,56 +259,66 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
       </div>
 
       <div className="grid grid-cols-5 gap-6 h-[calc(100vh-12rem)]">
-        {/* File Tree */}
+        {/* File/Symbol Tree */}
         <div className="glass-card rounded-xl p-4 overflow-hidden flex flex-col col-span-1">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-semibold flex items-center">
               <Code className="w-5 h-5 mr-2 text-indigo-400" />
-              Repository Files
+              Repository Explorer
             </h3>
             <div className="flex space-x-2">
               <button 
-                className={`p-1.5 rounded-md hover:bg-gray-700/50 transition-colors ${
-                  showSymbolTree ? 'bg-indigo-600/20 text-indigo-300' : 'text-gray-400 hover:text-white'
+                className={`p-1.5 rounded-md transition-colors ${
+                  activeTreeView === 'files' 
+                    ? 'bg-indigo-600/20 text-indigo-300' 
+                    : 'hover:bg-gray-700/50 text-gray-400 hover:text-white'
                 }`}
-                onClick={() => setShowSymbolTree(!showSymbolTree)}
-                title="Toggle Symbol Tree"
+                onClick={() => setActiveTreeView('files')}
+                title="File Tree"
               >
-                <Layers className="w-4 h-4" />
+                <Folder className="w-4 h-4" />
               </button>
               <button 
-                className="p-1.5 rounded-md hover:bg-gray-700/50 text-gray-400 hover:text-white transition-colors"
-                title="Expand All"
+                className={`p-1.5 rounded-md transition-colors ${
+                  activeTreeView === 'symbols' 
+                    ? 'bg-indigo-600/20 text-indigo-300' 
+                    : 'hover:bg-gray-700/50 text-gray-400 hover:text-white'
+                }`}
+                onClick={() => setActiveTreeView('symbols')}
+                title="Symbol Tree"
               >
-                <GitBranch className="w-4 h-4" />
+                <Code className="w-4 h-4" />
               </button>
             </div>
           </div>
-          
-          {showSymbolTree && selectedFile ? (
-            <div className="overflow-y-auto flex-grow border border-gray-700/30 rounded-lg bg-gray-800/20 p-2">
-              <SymbolTreeView 
-                owner={owner} 
-                repo={repo} 
-                path={selectedFile.path} 
-              />
-            </div>
-          ) : (
-            <div className="overflow-y-auto flex-grow border border-gray-700/30 rounded-lg bg-gray-800/20 p-2">
-              {fileTree.length > 0 ? (
+          <div className="overflow-y-auto flex-grow border border-gray-700/30 rounded-lg bg-gray-800/20 p-2">
+            {activeTreeView === 'files' ? (
+              fileTree.length > 0 ? (
                 renderFileTree(fileTree)
               ) : (
                 <div className="text-gray-400 text-sm flex items-center justify-center h-full">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500 mr-2"></div>
                   Loading file structure...
                 </div>
-              )}
-            </div>
-          )}
+              )
+            ) : (
+              symbolTree.length > 0 ? (
+                renderSymbolTree(symbolTree)
+              ) : (
+                <div className="text-gray-400 text-sm flex items-center justify-center h-full">
+                  <div className="flex flex-col items-center">
+                    <Code className="w-8 h-8 text-gray-500 mb-2" />
+                    <p>No symbol information available</p>
+                    <p className="text-xs mt-2">Select a file to view its symbols</p>
+                  </div>
+                </div>
+              )
+            )}
+          </div>
         </div>
 
         {/* Content Area */}
-        <div className="glass-card rounded-xl p-4 col-span-3 overflow-hidden flex flex-col">
+        <div className="glass-card rounded-xl p-4 col-span-4 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between mb-3">
             <div className="flex space-x-4">
               <button
@@ -291,7 +330,7 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
                 }`}
               >
                 <div className="flex items-center">
-                  <FileText className="w-4 h-4 mr-2" />
+                  <BookOpen className="w-4 h-4 mr-2" />
                   README
                 </div>
               </button>
@@ -345,32 +384,6 @@ const ProjectReadme: React.FC<ProjectReadmeProps> = ({ owner, repo, onBack }) =>
               </div>
             )}
           </div>
-        </div>
-
-        {/* Related Repositories */}
-        <div className="col-span-1 space-y-6 overflow-y-auto">
-          {isLoadingDetails ? (
-            <div className="glass-card p-4 rounded-xl flex items-center justify-center h-24">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500 mr-2"></div>
-              <span className="text-sm text-gray-400">Loading related data...</span>
-            </div>
-          ) : (
-            <>
-              <RelatedRepos 
-                repos={relatedRepos}
-                title="Similar Repositories"
-                emptyMessage="No similar repositories found"
-                onSelectRepo={handleSelectRepo}
-              />
-              
-              <RelatedRepos 
-                repos={dependentRepos}
-                title="Dependent Projects"
-                emptyMessage="No dependent projects found"
-                onSelectRepo={handleSelectRepo}
-              />
-            </>
-          )}
         </div>
       </div>
     </div>

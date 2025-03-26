@@ -23,15 +23,16 @@ import {
   FolderOpen,
   FileText,
   Book,
-  Compass
+  BarChart,
+  Globe
 } from 'lucide-react';
 import CategoryDialog from './components/CategoryDialog';
 import SearchBar from './components/SearchBar';
 import CategoryFilter from './components/CategoryFilter';
-import AdvancedGitHubSearch from './components/AdvancedGitHubSearch';
 import GitHubSettings from './components/GitHubSettings';
 import AddProjectDialog from './components/AddProjectDialog';
 import ProjectReadme from './components/ProjectReadme';
+import GitHubDiscovery from './components/GitHubDiscovery';
 import { v4 as uuidv4 } from 'uuid';
 import { getSaveLocation, setSaveLocation, getProjects, setProjects, getCategories, setCategories } from './utils/store';
 import { searchRepositories, getTrendingRepositories, GitHubRepo } from './utils/github';
@@ -188,6 +189,10 @@ function App() {
     
     return matchesSearch && matchesCategories;
   });
+
+  const handleSelectGitHubRepo = (repo: GitHubRepo) => {
+    window.open(repo.html_url, '_blank');
+  };
 
   const ProjectCard = ({ project }: { project: Project }) => (
     <div className="project-card group" onClick={() => setSelectedProject(project)}>
@@ -580,38 +585,6 @@ function App() {
     return colors[language] || '#8257e5'; // Default purple color
   };
 
-  const handleSelectGitHubRepo = (repo: GitHubRepo) => {
-    const newProject: Project = {
-      id: uuidv4(),
-      name: repo.name,
-      description: repo.description || '',
-      category: '',
-      url: repo.html_url,
-      logo: repo.owner.avatar_url,
-      owner: repo.owner.login,
-      stats: {
-        stars: repo.stargazers_count,
-        forks: repo.forks_count,
-        watchers: repo.watchers_count,
-        issues: repo.open_issues_count
-      },
-      lastActivity: repo.updated_at,
-      contributors: 0,
-      branches: 0,
-      commits: 0,
-      pullRequests: 0,
-      categories: [],
-      languages: [],
-      topics: repo.topics || [],
-      license: repo.license?.name,
-      size: repo.size,
-      homepage: repo.homepage
-    };
-    
-    addProject(newProject);
-    setActiveTab('projects');
-  };
-
   return (
     <div className="min-h-screen">
       {/* Sidebar */}
@@ -626,7 +599,7 @@ function App() {
           onClick={() => setActiveTab('discover')}
           className={`nav-button ${activeTab === 'discover' ? 'active' : ''}`}
         >
-          <Compass className="w-6 h-6" />
+          <Globe className="w-6 h-6" />
         </button>
         <button
           onClick={() => setActiveTab('settings')}
@@ -691,7 +664,10 @@ function App() {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
               Discover GitHub Projects
             </h1>
-            <AdvancedGitHubSearch onSelectRepo={handleSelectGitHubRepo} />
+            <GitHubDiscovery 
+              onSelectRepo={handleSelectGitHubRepo}
+              currentRepo={selectedProject ? { owner: selectedProject.owner, name: selectedProject.name } : null}
+            />
           </div>
         ) : (
           <div className="space-y-6">

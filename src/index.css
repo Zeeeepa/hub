@@ -96,6 +96,67 @@
            hover:bg-gray-700/50 backdrop-blur-sm;
   }
   
+  /* Symbol tree styles */
+  .symbol-item {
+    @apply flex items-center py-1.5 px-2 rounded-md hover:bg-gray-700/50 
+           cursor-pointer transition-colors duration-150;
+  }
+
+  .symbol-item.active {
+    @apply bg-indigo-600/20 text-indigo-300 border-l-2 border-indigo-400;
+  }
+
+  .symbol-icon {
+    @apply w-4 h-4 mr-2;
+  }
+
+  .symbol-name {
+    @apply text-sm truncate;
+  }
+
+  .symbol-kind {
+    @apply text-xs text-gray-500 ml-auto;
+  }
+
+  /* Insight card styles */
+  .insight-card {
+    @apply glass-card p-3 rounded-lg transition-all duration-300 hover:bg-gray-800/40;
+  }
+
+  .insight-label {
+    @apply text-sm text-gray-400;
+  }
+
+  .insight-value {
+    @apply text-xl font-bold;
+  }
+
+  /* Tab styles */
+  .tab-button {
+    @apply pb-2 px-4 transition-colors flex items-center space-x-2;
+  }
+
+  .tab-button.active {
+    @apply text-purple-400 border-b-2 border-purple-400;
+  }
+
+  .tab-button:not(.active) {
+    @apply text-gray-400 hover:text-white;
+  }
+
+  /* Topic tag styles */
+  .topic-tag {
+    @apply px-3 py-1.5 rounded-full text-sm font-medium transition-colors;
+  }
+
+  .topic-tag.active {
+    @apply bg-purple-500/30 text-purple-300 border border-purple-500/50;
+  }
+
+  .topic-tag:not(.active) {
+    @apply bg-gray-700/30 text-gray-300 border border-gray-600/30 hover:bg-gray-700/50;
+  }
+  
   /* Markdown styles */
   .markdown-body {
     @apply text-gray-300 leading-relaxed;
@@ -191,3 +252,36 @@
     background-position: 100% 50%;
   }
 }
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
