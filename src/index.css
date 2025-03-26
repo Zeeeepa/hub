@@ -92,6 +92,87 @@
     @apply p-2 rounded-lg transition-colors duration-200
            hover:bg-gray-700/50 backdrop-blur-sm;
   }
+  
+  /* Markdown styles */
+  .markdown-body {
+    @apply text-gray-300 leading-relaxed;
+  }
+  
+  .markdown-body h1 {
+    @apply text-2xl font-bold mt-6 mb-4 pb-2 border-b border-gray-700/50 text-white;
+  }
+  
+  .markdown-body h2 {
+    @apply text-xl font-bold mt-5 mb-3 pb-1 text-white;
+  }
+  
+  .markdown-body h3 {
+    @apply text-lg font-semibold mt-4 mb-2 text-white;
+  }
+  
+  .markdown-body h4, .markdown-body h5, .markdown-body h6 {
+    @apply font-semibold mt-3 mb-2 text-white;
+  }
+  
+  .markdown-body p {
+    @apply my-3;
+  }
+  
+  .markdown-body a {
+    @apply text-indigo-400 hover:text-indigo-300 transition-colors;
+  }
+  
+  .markdown-body ul, .markdown-body ol {
+    @apply my-3 pl-6;
+  }
+  
+  .markdown-body ul {
+    @apply list-disc;
+  }
+  
+  .markdown-body ol {
+    @apply list-decimal;
+  }
+  
+  .markdown-body li {
+    @apply my-1;
+  }
+  
+  .markdown-body blockquote {
+    @apply border-l-4 border-gray-600 pl-4 py-1 my-3 text-gray-400 italic;
+  }
+  
+  .markdown-body code {
+    @apply bg-gray-800/70 px-1.5 py-0.5 rounded text-sm font-mono;
+  }
+  
+  .markdown-body pre {
+    @apply bg-gray-800/70 p-4 rounded-lg my-4 overflow-x-auto;
+  }
+  
+  .markdown-body pre code {
+    @apply bg-transparent p-0 text-sm;
+  }
+  
+  .markdown-body img {
+    @apply max-w-full rounded-lg my-4;
+  }
+  
+  .markdown-body table {
+    @apply w-full my-4 border-collapse;
+  }
+  
+  .markdown-body table th, .markdown-body table td {
+    @apply border border-gray-700 px-4 py-2;
+  }
+  
+  .markdown-body table th {
+    @apply bg-gray-800/50;
+  }
+  
+  .markdown-body hr {
+    @apply my-6 border-gray-700/50;
+  }
 }
 
 .animate-gradient {
