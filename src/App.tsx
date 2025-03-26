@@ -22,7 +22,9 @@ import {
   Tag,
   FolderOpen,
   FileText,
-  Book
+  Book,
+  BarChart,
+  Globe
 } from 'lucide-react';
 import CategoryDialog from './components/CategoryDialog';
 import SearchBar from './components/SearchBar';
@@ -30,6 +32,7 @@ import CategoryFilter from './components/CategoryFilter';
 import GitHubSettings from './components/GitHubSettings';
 import AddProjectDialog from './components/AddProjectDialog';
 import ProjectReadme from './components/ProjectReadme';
+import GitHubDiscovery from './components/GitHubDiscovery';
 import { v4 as uuidv4 } from 'uuid';
 import { getSaveLocation, setSaveLocation, getProjects, setProjects, getCategories, setCategories } from './utils/store';
 import { searchRepositories, getTrendingRepositories, GitHubRepo } from './utils/github';
@@ -73,7 +76,7 @@ type Project = {
 };
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'projects' | 'settings'>('projects');
+  const [activeTab, setActiveTab] = useState<'projects' | 'settings' | 'discover'>('projects');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [isAddProjectDialogOpen, setIsAddProjectDialogOpen] = useState(false);
@@ -186,6 +189,10 @@ function App() {
     
     return matchesSearch && matchesCategories;
   });
+
+  const handleSelectGitHubRepo = (repo: GitHubRepo) => {
+    window.open(repo.html_url, '_blank');
+  };
 
   const ProjectCard = ({ project }: { project: Project }) => (
     <div className="project-card group" onClick={() => setSelectedProject(project)}>
@@ -589,6 +596,12 @@ function App() {
           <Github className="w-6 h-6" />
         </button>
         <button
+          onClick={() => setActiveTab('discover')}
+          className={`nav-button ${activeTab === 'discover' ? 'active' : ''}`}
+        >
+          <Globe className="w-6 h-6" />
+        </button>
+        <button
           onClick={() => setActiveTab('settings')}
           className={`nav-button ${activeTab === 'settings' ? 'active' : ''}`}
         >
@@ -607,11 +620,6 @@ function App() {
                     GitHub Projects
                   </h1>
                   <div className="flex space-x-4">
-                    <SearchBar
-                      placeholder="Search GitHub projects..."
-                      value={githubSearch}
-                      onChange={setGithubSearch}
-                    />
                     <SearchBar
                       placeholder="Search local projects..."
                       value={projectSearch}
@@ -650,6 +658,16 @@ function App() {
                 />
               )
             )}
+          </div>
+        ) : activeTab === 'discover' ? (
+          <div className="space-y-6">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              Discover GitHub Projects
+            </h1>
+            <GitHubDiscovery 
+              onSelectRepo={handleSelectGitHubRepo}
+              currentRepo={selectedProject ? { owner: selectedProject.owner, name: selectedProject.name } : null}
+            />
           </div>
         ) : (
           <div className="space-y-6">
