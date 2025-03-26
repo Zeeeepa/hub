@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Star, GitFork, Eye, Code, Tag, Zap, Users, Building, Trending, Activity, BarChart } from 'lucide-react';
+import { 
+  Search, Star, GitFork, Eye, Code, Tag, Zap, Users, Building, Trending, 
+  Activity, BarChart, Globe, Filter, Calendar, Award, Bookmark, 
+  TrendingUp, Compass, Cpu, Database, FileCode, Layers, Sliders
+} from 'lucide-react';
 import { 
   searchRepositories, 
   getTrendingRepositories, 
@@ -11,6 +15,13 @@ import {
   getSimilarRepositories,
   GitHubRepo 
 } from '../utils/github';
+import {
+  getAdvancedSearch,
+  getEcosystemProjects,
+  getRecentlyUpdatedRepositories,
+  getMostActiveRepositories,
+  getRepositoryRecommendations
+} from '../utils/githubExtended';
 
 interface GitHubDiscoveryProps {
   onSelectRepo: (repo: GitHubRepo) => void;
@@ -42,7 +53,22 @@ export default function GitHubDiscovery({ onSelectRepo, currentRepo }: GitHubDis
   const [timePeriod, setTimePeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [repositories, setRepositories] = useState<GitHubRepo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'search' | 'trending' | 'topics' | 'recommended' | 'user' | 'org' | 'similar'>('trending');
+  const [activeTab, setActiveTab] = useState<'search' |  const [activeTab, setActiveTab] = useState<
+    'search' | 'trending' | 'topics' | 'recommended' | 'user' | 'org' | 'similar' | 
+    'ecosystem' | 'recent' | 'active' | 'advanced' | 'discover'
+  >('trending');|  const [activeTab, setActiveTab] = useState<
+    'search' | 'trending' | 'topics' | 'recommended' | 'user' | 'org' | 'similar' | 
+    'ecosystem' | 'recent' | 'active' | 'advanced' | 'discover'
+  >('trending');|  const [activeTab, setActiveTab] = useState<
+    'search' | 'trending' | 'topics' | 'recommended' | 'user' | 'org' | 'similar' | 
+    'ecosystem' | 'recent' | 'active' | 'advanced' | 'discover'
+  >('trending');|  const [activeTab, setActiveTab] = useState<
+    'search' | 'trending' | 'topics' | 'recommended' | 'user' | 'org' | 'similar' | 
+    'ecosystem' | 'recent' | 'active' | 'advanced' | 'discover'
+  >('trending');|  const [activeTab, setActiveTab] = useState<
+    'search' | 'trending' | 'topics' | 'recommended' | 'user' | 'org' | 'similar' | 
+    'ecosystem' | 'recent' | 'active' | 'advanced' | 'discover'
+  >('trending');| 'similar'>('trending');
   const [popularTopics, setPopularTopics] = useState<string[]>([]);
   const [selectedTopic, setSelectedTopic] = useState('');
   const [userInterests, setUserInterests] = useState<string[]>([]);
@@ -72,13 +98,19 @@ export default function GitHubDiscovery({ onSelectRepo, currentRepo }: GitHubDis
   }, [selectedLanguage, timePeriod, activeTab]);
 
   useEffect(() => {
-    if (activeTab === 'topics' && selectedTopic) {
+    if (activeTab ===  const [activeTab, setActiveTab] = useState<
+    'search' | 'trending' | 'topics' | 'recommended' | 'user' | 'org' | 'similar' | 
+    'ecosystem' | 'recent' | 'active' | 'advanced' | 'discover'
+  >('trending');&& selectedTopic) {
       fetchTopicRepos();
     }
   }, [selectedTopic, activeTab]);
 
   useEffect(() => {
-    if (activeTab === 'recommended' && userInterests.length > 0) {
+    if (activeTab ===  const [activeTab, setActiveTab] = useState<
+    'search' | 'trending' | 'topics' | 'recommended' | 'user' | 'org' | 'similar' | 
+    'ecosystem' | 'recent' | 'active' | 'advanced' | 'discover'
+  >('trending');&& userInterests.length > 0) {
       fetchRecommendedRepos();
     }
   }, [userInterests, selectedLanguage, activeTab]);
@@ -316,7 +348,10 @@ export default function GitHubDiscovery({ onSelectRepo, currentRepo }: GitHubDis
           </div>
         )}
 
-        {activeTab === 'user' && (
+        {activeTab ===  const [activeTab, setActiveTab] = useState<
+    'search' | 'trending' | 'topics' | 'recommended' | 'user' | 'org' | 'similar' | 
+    'ecosystem' | 'recent' | 'active' | 'advanced' | 'discover'
+  >('trending');&& (
           <div className="flex-1">
             <div className="relative">
               <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -332,7 +367,10 @@ export default function GitHubDiscovery({ onSelectRepo, currentRepo }: GitHubDis
           </div>
         )}
 
-        {activeTab === 'org' && (
+        {activeTab ===  const [activeTab, setActiveTab] = useState<
+    'search' | 'trending' | 'topics' | 'recommended' | 'user' | 'org' | 'similar' | 
+    'ecosystem' | 'recent' | 'active' | 'advanced' | 'discover'
+  >('trending');&& (
           <div className="flex-1">
             <div className="relative">
               <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -348,7 +386,10 @@ export default function GitHubDiscovery({ onSelectRepo, currentRepo }: GitHubDis
           </div>
         )}
 
-        {activeTab === 'trending' && (
+        {activeTab ===  const [activeTab, setActiveTab] = useState<
+    'search' | 'trending' | 'topics' | 'recommended' | 'user' | 'org' | 'similar' | 
+    'ecosystem' | 'recent' | 'active' | 'advanced' | 'discover'
+  >('trending');&& (
           <>
             <select
               value={selectedLanguage}
@@ -376,7 +417,10 @@ export default function GitHubDiscovery({ onSelectRepo, currentRepo }: GitHubDis
           </>
         )}
 
-        {activeTab === 'topics' && (
+        {activeTab ===  const [activeTab, setActiveTab] = useState<
+    'search' | 'trending' | 'topics' | 'recommended' | 'user' | 'org' | 'similar' | 
+    'ecosystem' | 'recent' | 'active' | 'advanced' | 'discover'
+  >('trending');&& (
           <div className="w-full">
             <div className="flex flex-wrap gap-2 mb-4">
               {popularTopics.map(topic => (
@@ -396,7 +440,10 @@ export default function GitHubDiscovery({ onSelectRepo, currentRepo }: GitHubDis
           </div>
         )}
 
-        {activeTab === 'recommended' && (
+        {activeTab ===  const [activeTab, setActiveTab] = useState<
+    'search' | 'trending' | 'topics' | 'recommended' | 'user' | 'org' | 'similar' | 
+    'ecosystem' | 'recent' | 'active' | 'advanced' | 'discover'
+  >('trending');&& (
           <div className="w-full">
             <div className="mb-4">
               <h3 className="text-sm font-medium text-gray-300 mb-2">Select your interests:</h3>
