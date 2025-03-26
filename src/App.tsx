@@ -663,7 +663,7 @@ function App() {
                   onSelectCategory={toggleCategoryFilter}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                   {filteredProjects.map((project) => (
                     <ProjectCard key={project.id} project={project} />
                   ))}

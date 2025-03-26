@@ -104,6 +104,24 @@ export default function GitHubDiscovery({ onSelectRepo, currentRepo }: GitHubDis
   }, [currentRepo, activeTab]);
 
   useEffect(() => {
+    if (activeTab === 'ecosystem') {
+      fetchEcosystemProjects();
+    }
+  }, [selectedLanguage, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'recent') {
+      fetchRecentProjects();
+    }
+  }, [selectedLanguage, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'active') {
+      fetchActiveProjects();
+    }
+  }, [selectedLanguage, activeTab]);
+
+  useEffect(() => {
     if (repositories.length > 0) {
       calculateInsights();
     }
@@ -199,6 +217,21 @@ export default function GitHubDiscovery({ onSelectRepo, currentRepo }: GitHubDis
     setIsLoading(false);
   };
 
+  const fetchEcosystemProjects = async () => {
+    const projects = await getEcosystemProjects(selectedLanguage);
+    setRepositories(projects);
+  };
+
+  const fetchRecentProjects = async () => {
+    const projects = await getRecentlyUpdatedRepositories(selectedLanguage);
+    setRepositories(projects);
+  };
+
+  const fetchActiveProjects = async () => {
+    const projects = await getMostActiveRepositories(selectedLanguage);
+    setRepositories(projects);
+  };
+
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
     setIsLoading(true);
@@ -265,6 +298,39 @@ export default function GitHubDiscovery({ onSelectRepo, currentRepo }: GitHubDis
           <span>For You</span>
         </button>
         <button
+          onClick={() => setActiveTab('ecosystem')}
+          className={`pb-2 px-4 transition-colors flex items-center space-x-2 ${
+            activeTab === 'ecosystem'
+              ? 'text-purple-400 border-b-2 border-purple-400'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <Cpu className="w-4 h-4" />
+          <span>Ecosystem</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('recent')}
+          className={`pb-2 px-4 transition-colors flex items-center space-x-2 ${
+            activeTab === 'recent'
+              ? 'text-purple-400 border-b-2 border-purple-400'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <Clock className="w-4 h-4" />
+          <span>Recent</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('active')}
+          className={`pb-2 px-4 transition-colors flex items-center space-x-2 ${
+            activeTab === 'active'
+              ? 'text-purple-400 border-b-2 border-purple-400'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <Activity className="w-4 h-4" />
+          <span>Active</span>
+        </button>
+        <button
           onClick={() => setActiveTab('user')}
           className={`pb-2 px-4 transition-colors flex items-center space-x-2 ${
             activeTab === 'user'
@@ -295,10 +361,21 @@ export default function GitHubDiscovery({ onSelectRepo, currentRepo }: GitHubDis
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            <Activity className="w-4 h-4" />
+            <Compass className="w-4 h-4" />
             <span>Similar</span>
           </button>
         )}
+        <button
+          onClick={() => setActiveTab('advanced')}
+          className={`pb-2 px-4 transition-colors flex items-center space-x-2 ${
+            activeTab === 'advanced'
+              ? 'text-purple-400 border-b-2 border-purple-400'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <Sliders className="w-4 h-4" />
+          <span>Advanced</span>
+        </button>
         <button
           onClick={() => setActiveTab('search')}
           className={`pb-2 px-4 transition-colors flex items-center space-x-2 ${
@@ -456,6 +533,173 @@ export default function GitHubDiscovery({ onSelectRepo, currentRepo }: GitHubDis
                 >
                   <Zap className="w-4 h-4" />
                   <span>Refresh</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'ecosystem' && (
+          <div className="w-full">
+            <div className="flex items-center mb-4">
+              <Cpu className="w-5 h-5 text-purple-400 mr-2" />
+              <h3 className="text-lg font-semibold">Ecosystem Projects</h3>
+            </div>
+            <div className="flex space-x-4 mb-4">
+              <select
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+                className="search-input bg-transparent"
+              >
+                {LANGUAGES.map((lang) => (
+                  <option key={lang} value={lang} className="bg-gray-800">
+                    {lang}
+                  </option>
+                ))}
+              </select>
+              <button 
+                onClick={fetchEcosystemProjects}
+                className="btn-secondary"
+              >
+                <Zap className="w-4 h-4" />
+                <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'recent' && (
+          <div className="w-full">
+            <div className="flex items-center mb-4">
+              <Clock className="w-5 h-5 text-purple-400 mr-2" />
+              <h3 className="text-lg font-semibold">Recently Updated Projects</h3>
+            </div>
+            <div className="flex space-x-4 mb-4">
+              <select
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+                className="search-input bg-transparent"
+              >
+                {LANGUAGES.map((lang) => (
+                  <option key={lang} value={lang} className="bg-gray-800">
+                    {lang}
+                  </option>
+                ))}
+              </select>
+              <button 
+                onClick={fetchRecentProjects}
+                className="btn-secondary"
+              >
+                <Zap className="w-4 h-4" />
+                <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'active' && (
+          <div className="w-full">
+            <div className="flex items-center mb-4">
+              <Activity className="w-5 h-5 text-purple-400 mr-2" />
+              <h3 className="text-lg font-semibold">Most Active Projects</h3>
+            </div>
+            <div className="flex space-x-4 mb-4">
+              <select
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+                className="search-input bg-transparent"
+              >
+                {LANGUAGES.map((lang) => (
+                  <option key={lang} value={lang} className="bg-gray-800">
+                    {lang}
+                  </option>
+                ))}
+              </select>
+              <button 
+                onClick={fetchActiveProjects}
+                className="btn-secondary"
+              >
+                <Zap className="w-4 h-4" />
+                <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'advanced' && (
+          <div className="w-full">
+            <div className="flex items-center mb-4">
+              <Sliders className="w-5 h-5 text-purple-400 mr-2" />
+              <h3 className="text-lg font-semibold">Advanced Search</h3>
+            </div>
+            <div className="glass-card p-6 rounded-xl space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Search Query</label>
+                  <input
+                    type="text"
+                    placeholder="Enter search terms..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="search-input w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Language</label>
+                  <select
+                    value={selectedLanguage}
+                    onChange={(e) => setSelectedLanguage(e.target.value)}
+                    className="search-input bg-transparent w-full"
+                  >
+                    {LANGUAGES.map((lang) => (
+                      <option key={lang} value={lang} className="bg-gray-800">
+                        {lang}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Minimum Stars</label>
+                  <input
+                    type="number"
+                    placeholder="Minimum stars..."
+                    className="search-input w-full"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Updated Within</label>
+                  <select
+                    className="search-input bg-transparent w-full"
+                  >
+                    <option value="7" className="bg-gray-800">Last week</option>
+                    <option value="30" className="bg-gray-800">Last month</option>
+                    <option value="90" className="bg-gray-800">Last 3 months</option>
+                    <option value="365" className="bg-gray-800">Last year</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-4 mt-2">
+                <div className="flex items-center space-x-2">
+                  <input type="checkbox" id="has-issues" className="rounded bg-gray-700 border-gray-600" />
+                  <label htmlFor="has-issues" className="text-sm text-gray-300">Has Issues</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input type="checkbox" id="has-wiki" className="rounded bg-gray-700 border-gray-600" />
+                  <label htmlFor="has-wiki" className="text-sm text-gray-300">Has Wiki</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input type="checkbox" id="is-template" className="rounded bg-gray-700 border-gray-600" />
+                  <label htmlFor="is-template" className="text-sm text-gray-300">Is Template</label>
+                </div>
+              </div>
+              <div className="flex justify-end mt-4">
+                <button 
+                  onClick={handleSearch}
+                  className="btn-primary"
+                >
+                  <Search className="w-4 h-4" />
+                  <span>Search</span>
                 </button>
               </div>
             </div>
