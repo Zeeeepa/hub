@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Search, Star, GitFork, Eye, Code, Tag, Zap, Users, Building, Trending, 
+  Search, Star, GitFork, Eye, Code, Tag, Zap, Users, Building, 
   Activity, BarChart, Globe, Filter, Calendar, Award, Bookmark, 
   TrendingUp, Compass, Cpu, Database, FileCode, Layers, Sliders
 } from 'lucide-react';
@@ -239,7 +239,7 @@ export default function GitHubDiscovery({ onSelectRepo, currentRepo }: GitHubDis
               : 'text-gray-400 hover:text-white'
           }`}
         >
-          <Trending className="w-4 h-4" />
+          <TrendingUp className="w-4 h-4" />
           <span>Trending</span>
         </button>
         <button
