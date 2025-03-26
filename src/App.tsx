@@ -20,13 +20,16 @@ import {
   ChevronRight,
   ArrowLeft,
   Tag,
-  FolderOpen
+  FolderOpen,
+  FileText,
+  Book
 } from 'lucide-react';
 import CategoryDialog from './components/CategoryDialog';
 import SearchBar from './components/SearchBar';
 import CategoryFilter from './components/CategoryFilter';
 import GitHubSettings from './components/GitHubSettings';
 import AddProjectDialog from './components/AddProjectDialog';
+import ProjectReadme from './components/ProjectReadme';
 import { v4 as uuidv4 } from 'uuid';
 import { getSaveLocation, setSaveLocation, getProjects, setProjects, getCategories, setCategories } from './utils/store';
 import { searchRepositories, getTrendingRepositories, GitHubRepo } from './utils/github';
@@ -81,6 +84,7 @@ function App() {
   const [projects, setProjectsState] = useState<Project[]>(getProjects() || []);
   const [githubResults, setGithubResults] = useState<GitHubRepo[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [viewMode, setViewMode] = useState<'details' | 'readme'>('details');
 
   const [globalCategories, setGlobalCategories] = useState<Category[]>(
     getCategories() || []
@@ -310,6 +314,13 @@ function App() {
           <span>Back to Projects</span>
         </button>
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setViewMode('readme')}
+            className={`btn-secondary ${viewMode === 'readme' ? 'bg-indigo-600/30 border-indigo-500/50' : ''}`}
+          >
+            <Book className="w-5 h-5" />
+            <span>View README</span>
+          </button>
           <button
             onClick={() => setIsCategoryDialogOpen(true)}
             className="btn-secondary"
@@ -629,7 +640,15 @@ function App() {
                 </div>
               </>
             ) : (
-              <ProjectDetail project={selectedProject} />
+              viewMode === 'details' ? (
+                <ProjectDetail project={selectedProject} />
+              ) : (
+                <ProjectReadme 
+                  owner={selectedProject.owner} 
+                  repo={selectedProject.name}
+                  onBack={() => setViewMode('details')}
+                />
+              )
             )}
           </div>
         ) : (

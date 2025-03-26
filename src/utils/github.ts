@@ -55,6 +55,20 @@ export interface RepoDetails {
   };
 }
 
+export interface RepoContent {
+  name: string;
+  path: string;
+  sha: string;
+  size: number;
+  url: string;
+  html_url: string;
+  git_url: string;
+  download_url: string;
+  type: 'file' | 'dir';
+  content?: string;
+  encoding?: string;
+}
+
 export const searchRepositories = async (query: string): Promise<GitHubRepo[]> => {
   if (!octokit) return [];
   
@@ -307,6 +321,36 @@ export const getReadme = async (owner: string, repo: string): Promise<string | n
   } catch (error) {
     console.error('Error fetching readme:', error);
     return null;
+  }
+};
+
+export const getRepoContents = async (
+  owner: string, 
+  repo: string, 
+  path: string,
+  getContent: boolean = false
+): Promise<any> => {
+  if (!octokit) return [];
+
+  try {
+    const response = await octokit.request('GET /repos/{owner}/{repo}/contents/{path}', {
+      owner,
+      repo,
+      path,
+      headers: {
+        'X-GitHub-Api-Version': '2022-11-28'
+      }
+    });
+
+    if (getContent && !Array.isArray(response.data) && response.data.content) {
+      // For file content, decode base64
+      return Buffer.from(response.data.content, 'base64').toString('utf-8');
+    }
+
+    return Array.isArray(response.data) ? response.data : [response.data];
+  } catch (error) {
+    console.error(`Error fetching repo contents for ${path}:`, error);
+    return [];
   }
 };
 
