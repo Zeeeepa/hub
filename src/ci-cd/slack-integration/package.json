@@ -1,0 +1,28 @@
+{
+  "name": "codegen-ci-cd-slack-bot",
+  "version": "1.0.0",
+  "description": "Slack bot for Codegen CI/CD integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "slack",
+    "bot",
+    "codegen",
+    "ci",
+    "cd"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@octokit/rest": "^19.0.7",
+    "@slack/bolt": "^3.13.0",
+    "axios": "^1.4.0",
+    "dotenv": "^16.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
