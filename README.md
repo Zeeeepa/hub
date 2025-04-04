@@ -4,6 +4,58 @@ A code research tool that enables users to understand codebases through agentic 
 
 Users submit a GitHub repository and research query through the frontend. The Modal API processes the request using an AI agent equipped with specialized code analysis tools. The agent explores the codebase using various tools (search, symbol analysis, etc.) and results are returned to the frontend for display.
 
+## Module Requirements
+
+### Continuous Data Mining
+- YouTube searcher
+- Internet searcher
+- Arxiv searcher
+- GitHub Code/project Searcher
+- Related repositories:
+  - [arxiver](https://github.com/Zeeeepa/arxiver) - Arxiv/YouTube comprehension
+  - [wiseflow](https://github.com/Zeeeepa/wiseflow) - Continuous data mining
+  - [open_deep_research](https://github.com/Zeeeepa/open_deep_research) - Research
+  - [gpt-researcher](https://github.com/Zeeeepa/gpt-researcher) - Research
+  - [RD-Agent](https://github.com/Zeeeepa/RD-Agent) - Data mining
+  - [mcp-aas](https://github.com/Zeeeepa/mcp-aas) - Could be adjusted for GitHub project/code search
+
+### Codebase Management
+- Code analysis capabilities
+- GitHub repository chat interface
+- Related repositories:
+  - [codegen](https://github.com/Zeeeepa/codegen) - Used for code analysis
+  - [deep-research](https://github.com/Zeeeepa/deep-research) - For chatting with GitHub repos UI page tab
+
+### Knowledge Base
+- Ability to retrieve and process content from:
+  1. Whole websites
+  2. Codebases (local/GitHub)
+  3. YouTube videos with transcribed text and enhanced context
+  4. Document files
+  5. Text input (instructions, requirements, etc.)
+  6. Code files (separate-exemplary cases)
+  7. Other content types
+- Goal: Create a library of contextual items that can be bundled together for better agent comprehension
+- Related repositories:
+  - [llmware](https://github.com/Zeeeepa/llmware)
+  - [PAI-RAG](https://github.com/zeeeepa/PAI-RAG)
+
+### GitHub Discovery
+- Tools to discover GitHub projects using various tools and agentic capabilities
+- Preference for using prominent GitHub projects
+- Related repositories:
+  - [mcp-aas](https://github.com/Zeeeepa/mcp-aas) - Could be adjusted for GitHub project/code search
+
+### Project Development
+- Chat interface with AI
+- Visual aids (mermaid map, diagram map) with tabs for different aspects
+- Project planning and management capabilities
+- Related repositories:
+  - [gitdiagram](https://github.com/Zeeeepa/gitdiagram)
+  - [plangen](https://github.com/zeeeepa/plangen) - For planning
+  - [Clean-Coder-AI](https://github.com/zeeeepa/Clean-Coder-AI) - For project management
+  - [plandex](https://github.com/Zeeeepa/plandex) - Project planning
+
 ## How it Works
 
 ### Backend (Modal API)
@@ -66,6 +118,21 @@ The frontend provides an interface for users to submit a GitHub repository and r
    npm install
    npm run dev
    ```
+
+## Development Workflow
+
+This project uses a scratchpad approach for organizing thoughts and tracking progress. When working on tasks:
+
+1. Use the `scratchpad.md` file to organize your thoughts and plan your approach
+2. For each new task:
+   - Review the current scratchpad content
+   - Clear old unrelated tasks if necessary
+   - Explain the new task and plan the steps needed
+   - Use todo markers to track progress: `[X]` for completed tasks, `[ ]` for pending tasks
+3. Update the progress in the scratchpad as you complete subtasks
+4. Use the scratchpad for reflection and planning, especially after completing milestones
+
+This approach helps maintain both the big picture and detailed progress tracking throughout development.
 
 ## Learn More
 
