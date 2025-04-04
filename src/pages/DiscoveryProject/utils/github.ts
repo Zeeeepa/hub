@@ -46,22 +46,17 @@ export function initializeOctokit(token?: string): void {
 }
 
 // Get repository README
-export async function getReadme(owner: string, repo: string): Promise<string | null> {
+export async function getReadme(owner: string, repo: string): Promise<string> {
   if (!octokit) initializeOctokit();
   
   try {
-    const { data } = await octokit!.rest.repos.getReadme({
-      owner,
-      repo,
-      mediaType: {
-        format: 'html'
-      }
-    });
+    console.log(`Fetching README for ${owner}/${repo}`);
     
-    return data as unknown as string;
+    // Mock implementation
+    return `# ${repo}\n\nThis is a sample README for the ${repo} repository.\n\n## Features\n\n- Feature 1\n- Feature 2\n- Feature 3`;
   } catch (error) {
     console.error('Error fetching README:', error);
-    return null;
+    return 'README not found or error occurred';
   }
 }
 
@@ -69,69 +64,42 @@ export async function getReadme(owner: string, repo: string): Promise<string | n
 export async function getRepoContents(
   owner: string,
   repo: string,
-  path: string,
-  isFile: boolean = false
-): Promise<any> {
+  path: string = ''
+): Promise<any[]> {
   if (!octokit) initializeOctokit();
   
   try {
-    const { data } = await octokit!.rest.repos.getContent({
-      owner,
-      repo,
-      path
-    });
+    console.log(`Fetching repo contents for ${owner}/${repo}/${path}`);
     
-    if (isFile) {
-      // For files, return decoded content
-      if ('content' in data && 'encoding' in data && data.encoding === 'base64') {
-        return Buffer.from(data.content, 'base64').toString('utf-8');
-      }
-      return null;
-    } else {
-      // For directories, return array of items
-      return Array.isArray(data) ? data : [data];
-    }
+    // Mock implementation
+    return [
+      { name: 'src', type: 'dir', path: 'src' },
+      { name: 'README.md', type: 'file', path: 'README.md' },
+      { name: 'package.json', type: 'file', path: 'package.json' }
+    ];
   } catch (error) {
-    console.error('Error fetching repository contents:', error);
-    return isFile ? null : [];
+    console.error('Error fetching repo contents:', error);
+    return [];
   }
 }
 
 // Get symbol tree (mock implementation)
-export async function getSymbolTree(owner: string, repo: string): Promise<SymbolTreeItem[]> {
-  // In a real implementation, this would use a code analysis API or GitHub's GraphQL API
-  // For now, we'll return mock data
-  return [
-    {
-      name: 'App',
-      kind: 'class',
-      path: 'src/App.tsx',
-      line: 10,
-      children: [
-        {
-          name: 'render',
-          kind: 'function',
-          path: 'src/App.tsx',
-          line: 15,
-          children: []
-        }
-      ]
-    },
-    {
-      name: 'useGitHubApi',
-      kind: 'function',
-      path: 'src/hooks/useGitHubApi.ts',
-      line: 5,
-      children: []
-    },
-    {
-      name: 'GitHubContext',
-      kind: 'interface',
-      path: 'src/contexts/GitHubContext.tsx',
-      line: 8,
-      children: []
-    }
-  ];
+export async function getSymbolTree(owner: string, repo: string, path: string): Promise<SymbolTree | null> {
+  try {
+    // This would typically call a GitHub API or a language server
+    // For now, we'll return mock data
+    console.log(`Fetching symbol tree for ${owner}/${repo}/${path}`);
+    
+    // Mock implementation
+    return {
+      classes: ['Component', 'Repository', 'User'],
+      functions: ['fetchData', 'processResults', 'renderContent'],
+      variables: ['apiUrl', 'token', 'config']
+    };
+  } catch (error) {
+    console.error('Error fetching symbol tree:', error);
+    return null;
+  }
 }
 
 // Get related repositories
