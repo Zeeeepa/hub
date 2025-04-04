@@ -1,19 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import GitHubSearch from './GitHubSearch';
-import { GitHubRepo, getRepoDetails } from '../utils/github';
-import { X } from 'lucide-react';
+import GitHubDiscovery from '../../DiscoveryProject/components/GitHubDiscovery';
+import { GitHubRepo, getRepoDetails } from '../../DiscoveryProject/utils/github';
+import { X, Plus, Search, TrendingUp, Compass, Star, Tag } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
-interface AddProjectDialogProps {
+interface EnhancedAddProjectDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onAddProject: (project: any) => void;
 }
 
-export default function AddProjectDialog({ isOpen, onClose, onAddProject }: AddProjectDialogProps) {
-  const [isLoading, setIsLoading] = React.useState(false);
+export default function EnhancedAddProjectDialog({ 
+  isOpen, 
+  onClose, 
+  onAddProject 
+}: EnhancedAddProjectDialogProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'search' | 'trending' | 'topics' | 'recommended'>('trending');
 
   const handleSelectRepo = async (repo: GitHubRepo) => {
     setIsLoading(true);
@@ -126,10 +132,10 @@ export default function AddProjectDialog({ isOpen, onClose, onAddProject }: AddP
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-gray-800/50 backdrop-blur-xl p-6 text-left align-middle shadow-xl transition-all border border-gray-700/50">
+              <Dialog.Panel className="w-full max-w-6xl transform overflow-hidden rounded-2xl bg-gray-800/50 backdrop-blur-xl p-6 text-left align-middle shadow-xl transition-all border border-gray-700/50">
                 <div className="flex items-center justify-between mb-6">
                   <Dialog.Title as="h3" className="text-lg font-medium text-white">
-                    Add GitHub Project
+                    Discover & Add GitHub Projects
                   </Dialog.Title>
                   <button
                     onClick={onClose}
@@ -139,13 +145,68 @@ export default function AddProjectDialog({ isOpen, onClose, onAddProject }: AddP
                   </button>
                 </div>
 
+                {/* Tabs */}
+                <div className="flex space-x-4 border-b border-gray-700/30 mb-6">
+                  <button
+                    onClick={() => setActiveTab('trending')}
+                    className={`pb-2 px-4 transition-colors flex items-center space-x-2 ${
+                      activeTab === 'trending'
+                        ? 'text-purple-400 border-b-2 border-purple-400'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <TrendingUp className="w-4 h-4" />
+                    <span>Trending</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('topics')}
+                    className={`pb-2 px-4 transition-colors flex items-center space-x-2 ${
+                      activeTab === 'topics'
+                        ? 'text-purple-400 border-b-2 border-purple-400'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Tag className="w-4 h-4" />
+                    <span>Topics</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('recommended')}
+                    className={`pb-2 px-4 transition-colors flex items-center space-x-2 ${
+                      activeTab === 'recommended'
+                        ? 'text-purple-400 border-b-2 border-purple-400'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Star className="w-4 h-4" />
+                    <span>For You</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('search')}
+                    className={`pb-2 px-4 transition-colors flex items-center space-x-2 ${
+                      activeTab === 'search'
+                        ? 'text-purple-400 border-b-2 border-purple-400'
+                        : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Search className="w-4 h-4" />
+                    <span>Search</span>
+                  </button>
+                </div>
+
                 {isLoading ? (
                   <div className="flex justify-center py-12">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
                     <p className="ml-3 text-gray-300">Fetching project details...</p>
                   </div>
                 ) : (
-                  <GitHubSearch onSelectRepo={handleSelectRepo} />
+                  <div className="max-h-[70vh] overflow-y-auto">
+                    <GitHubDiscovery 
+                      onSelectRepo={handleSelectRepo}
+                      currentRepo={null}
+                      initialActiveTab={activeTab}
+                      containerClassName="max-h-full"
+                    />
+                  </div>
                 )}
               </Dialog.Panel>
             </Transition.Child>
