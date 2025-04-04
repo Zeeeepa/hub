@@ -1,74 +1,43 @@
-# Codegen Deep Research
+# Codebase Planner
 
-A code research tool that enables users to understand codebases through agentic AI analysis. The project combines a Modal-based FastAPI backend with a Next.js frontend to provide intelligent code exploration capabilities.
+A comprehensive chat interface with visual aids for project planning and diagramming.
 
-Users submit a GitHub repository and research query through the frontend. The Modal API processes the request using an AI agent equipped with specialized code analysis tools. The agent explores the codebase using various tools (search, symbol analysis, etc.) and results are returned to the frontend for display.
+## Overview
 
-## How it Works
+Codebase Planner is an AI-powered tool that helps developers and project managers plan, visualize, and manage software projects through an intuitive chat interface. It combines tree structure views for project organization with interactive diagrams for visualization, all driven by natural language interactions.
 
-### Backend (Modal API)
+## Key Features
 
-The backend is built using [Modal](https://modal.com/) and [FastAPI](https://fastapi.tiangolo.com/), providing a serverless API endpoint for code research.
+- **Chat Interface**: Interact with AI to plan and manage your projects
+- **Tree Structure View**: Hierarchical representation of project components
+- **Diagram Visualization**: Multiple diagram types with tabbed interface
+- **Project Planning**: AI-assisted planning and task breakdown
 
-There is a main API endpoint that handles code research requests. It uses the `codegen` library for codebase analysis.
+## Architecture
 
-The agent investigates the codebase through various research tools:
-- `ViewFileTool`: Read file contents
-- `ListDirectoryTool`: Explore directory structures
-- `SearchTool`: Text-based code search
-- `SemanticSearchTool`: AI-powered semantic code search
-- `RevealSymbolTool`: Analyze code symbols and relationships
+The application integrates several powerful tools:
 
-```python
-tools = [
-    ViewFileTool(codebase),
-    ListDirectoryTool(codebase),
-    SearchTool(codebase),
-    SemanticSearchTool(codebase),
-    RevealSymbolTool(codebase)
-]
+- **[GitDiagram](https://github.com/Zeeeepa/gitdiagram)**: For flow diagram generation
+- **[PlanGen](https://github.com/Zeeeepa/plangen)**: For AI-powered planning capabilities
+- **[Clean-Coder-AI](https://github.com/Zeeeepa/Clean-Coder-AI)**: For project management features
+- **[Plandex](https://github.com/Zeeeepa/plandex)**: For project planning and structure
 
-# Initialize agent with research tools
-agent = create_agent_with_tools(
-    codebase=codebase,
-    tools=tools,
-    chat_history=[SystemMessage(content=RESEARCH_AGENT_PROMPT)],
-    verbose=True
-)
-```
+## Documentation
 
-### Frontend (Next.js)
+For detailed documentation, see:
 
-The frontend provides an interface for users to submit a GitHub repository and research query. The components come from the [shadcn/ui](https://ui.shadcn.com/) library. This triggers the Modal API to perform the code research and returns the results to the frontend.
+- [Codebase Planner Overview](docs/codebase_planner.md)
+- [Technical Architecture](docs/technical_architecture.md)
+- [UI Mockups](docs/ui_mockups.md)
 
 ## Getting Started
 
-1. Set up environment variables in an `.env` file:
-   ```
-   OPENAI_API_KEY=your_key_here
-   ```
+Coming soon!
 
-2. Deploy or serve the Modal API:
-   ```bash
-   modal serve backend/api.py
-   ```
-   `modal serve` runs the API locally for development, creating a temporary endpoint that's active only while the command is running.
-   ```bash
-   modal deploy backend/api.py
-   ```
-   `modal deploy` creates a persistent Modal app and deploys the FastAPI app to it, generating a permanent API endpoint.
-   
-   After deployment, you'll need to update the API endpoint in the frontend configuration to point to your deployed Modal app URL.
+## Contributing
 
-3. Run the Next.js frontend:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Learn More
+## License
 
-More information about the `codegen` library can be found [here](https://codegen.com/).
-
-For details on the agent implementation, check out [Deep Code Research with AI](https://docs.codegen.com/tutorials/deep-code-research) from the Codegen docs. This tutorial provides an in-depth guide on how the research agent is created.
+This project is licensed under the MIT License - see the LICENSE file for details.
