@@ -5,10 +5,12 @@ import { Search, Settings, Github, Database, GitBranch, GitPullRequest, Users, S
 import GitHubSearch from './components/GitHubSearch';
 import GitHubSettings from './components/GitHubSettings';
 import SavedRepositories from './components/SavedRepositories';
+import GitHubProjects from './components/GitHubProjects';
+import AdvancedGitHubSearch from './components/AdvancedGitHubSearch';
 import { initializeOctokit, getUserProfile } from './utils/github';
 
 const GitHubProjectManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'search' | 'saved' | 'settings' | 'projects' | 'prs' | 'issues'>('search');
+  const [activeTab, setActiveTab] = useState<'search' | 'saved' | 'settings' | 'projects' | 'prs' | 'issues' | 'advanced'>('search');
   const [selectedRepo, setSelectedRepo] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -68,6 +70,13 @@ const GitHubProjectManagement: React.FC = () => {
           Repository Search
         </button>
         <button
+          onClick={() => setActiveTab('advanced')}
+          className={`px-4 py-2 flex items-center whitespace-nowrap ${activeTab === 'advanced' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-400 hover:text-gray-200'}`}
+        >
+          <Zap className="w-4 h-4 mr-2" />
+          Advanced Search
+        </button>
+        <button
           onClick={() => setActiveTab('saved')}
           className={`px-4 py-2 flex items-center whitespace-nowrap ${activeTab === 'saved' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-400 hover:text-gray-200'}`}
         >
@@ -107,48 +116,10 @@ const GitHubProjectManagement: React.FC = () => {
       {/* Content */}
       <div className="flex-1 overflow-auto">
         {activeTab === 'search' && <GitHubSearch onSelectRepo={handleSelectRepo} />}
+        {activeTab === 'advanced' && <AdvancedGitHubSearch onSelectRepo={handleSelectRepo} />}
         {activeTab === 'saved' && <SavedRepositories onSelectRepo={handleSelectRepo} />}
         {activeTab === 'settings' && <GitHubSettings />}
-        {activeTab === 'projects' && (
-          <div className="glass-card p-6 rounded-xl">
-            <div className="flex items-center mb-4">
-              <GitBranch className="w-5 h-5 text-blue-400 mr-2" />
-              <h2 className="text-xl font-semibold">GitHub Projects</h2>
-            </div>
-            <p className="text-gray-400 mb-6">
-              Manage your GitHub projects, track progress, and organize tasks.
-            </p>
-            
-            {userProfile ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="border border-gray-700/30 rounded-lg p-4 hover:bg-gray-800/50 transition-all duration-200">
-                  <h3 className="font-medium text-lg mb-2">Project Dashboard</h3>
-                  <p className="text-gray-400 text-sm mb-4">View and manage your GitHub projects in one place.</p>
-                  <div className="flex justify-end">
-                    <button className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm">
-                      View Projects
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="border border-gray-700/30 rounded-lg p-4 hover:bg-gray-800/50 transition-all duration-200">
-                  <h3 className="font-medium text-lg mb-2">Create New Project</h3>
-                  <p className="text-gray-400 text-sm mb-4">Set up a new GitHub project board for your repository.</p>
-                  <div className="flex justify-end">
-                    <button className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm">
-                      Create Project
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-400">
-                <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Sign in with GitHub to manage your projects</p>
-              </div>
-            )}
-          </div>
-        )}
+        {activeTab === 'projects' && <GitHubProjects />}
         
         {activeTab === 'issues' && (
           <div className="glass-card p-6 rounded-xl">

@@ -1,67 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Filter, Calendar, Code, Tag, Star, GitFork, Eye, Users, Clock, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Filter, Code, Tag, Calendar, Star, GitFork, Users, Loader, ExternalLink, Bookmark, BookmarkCheck } from 'lucide-react';
 import { searchRepositories, GitHubRepo } from '../utils/github';
+import { saveRepository, getSavedRepositories } from '../utils/store';
 
 interface AdvancedGitHubSearchProps {
-  onSelectRepo: (repo: GitHubRepo) => void;
+  onSelectRepo?: (repo: GitHubRepo) => void;
 }
 
-interface SearchFilter {
-  type: 'language' | 'stars' | 'created' | 'topic' | 'user' | 'forks' | 'updated';
-  value: string;
-  label: string;
-}
-
-const AdvancedGitHubSearch: React.FC<AdvancedGitHubSearchProps> = ({ onSelectRepo }) => {
+export default function AdvancedGitHubSearch({ onSelectRepo }: AdvancedGitHubSearchProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<SearchFilter[]>([]);
-  const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const [repositories, setRepositories] = useState<GitHubRepo[]>([]);
+  const [language, setLanguage] = useState('');
+  const [minStars, setMinStars] = useState('');
+  const [createdAfter, setCreatedAfter] = useState('');
+  const [topics, setTopics] = useState('');
+  const [sort, setSort] = useState<'stars' | 'forks' | 'updated'>('stars');
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const [isLoading, setIsLoading] = useState(false);
-  const [sortBy, setSortBy] = useState<'stars' | 'forks' | 'updated' | 'created'>('stars');
-  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  const [searchResults, setSearchResults] = useState<GitHubRepo[]>([]);
+  const [savedRepoIds, setSavedRepoIds] = useState<Set<number>>(new Set());
 
-  const addFilter = (filter: SearchFilter) => {
-    if (!filters.some(f => f.type === filter.type && f.value === filter.value)) {
-      setFilters([...filters, filter]);
-    }
-    setShowFilterMenu(false);
-  };
-
-  const removeFilter = (index: number) => {
-    const newFilters = [...filters];
-    newFilters.splice(index, 1);
-    setFilters(newFilters);
-  };
+  React.useEffect(() => {
+    const savedRepos = getSavedRepositories();
+    const savedIds = new Set(savedRepos.map(repo => repo.repoId));
+    setSavedRepoIds(savedIds);
+  }, []);
 
   const buildSearchQuery = () => {
     let query = searchQuery.trim();
     
-    filters.forEach(filter => {
-      switch (filter.type) {
-        case 'language':
-          query += ` language:${filter.value}`;
-          break;
-        case 'stars':
-          query += ` stars:${filter.value}`;
-          break;
-        case 'created':
-          query += ` created:${filter.value}`;
-          break;
-        case 'topic':
-          query += ` topic:${filter.value}`;
-          break;
-        case 'user':
-          query += ` user:${filter.value}`;
-          break;
-        case 'forks':
-          query += ` forks:${filter.value}`;
-          break;
-        case 'updated':
-          query += ` pushed:${filter.value}`;
-          break;
-      }
-    });
+    if (language) {
+      query += ` language:${language}`;
+    }
+    
+    if (minStars) {
+      query += ` stars:>=${minStars}`;
+    }
+    
+    if (createdAfter) {
+      query += ` created:>=${createdAfter}`;
+    }
+    
+    if (topics) {
+      const topicsList = topics.split(',').map(t => t.trim());
+      topicsList.forEach(topic => {
+        if (topic) query += ` topic:${topic}`;
+      });
+    }
     
     return query;
   };
@@ -72,8 +56,8 @@ const AdvancedGitHubSearch: React.FC<AdvancedGitHubSearchProps> = ({ onSelectRep
     
     setIsLoading(true);
     try {
-      const results = await searchRepositories(query);
-      setRepositories(results);
+      const results = await searchRepositories(query, sort, order);
+      setSearchResults(results);
     } catch (error) {
       console.error('Error searching repositories:', error);
     } finally {
@@ -81,212 +65,212 @@ const AdvancedGitHubSearch: React.FC<AdvancedGitHubSearchProps> = ({ onSelectRep
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
+  const handleSaveRepo = (repo: GitHubRepo, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    try {
+      saveRepository(repo);
+      setSavedRepoIds(prev => new Set([...prev, repo.id]));
+    } catch (error) {
+      console.error('Error saving repository:', error);
     }
   };
 
-  const getFilterIcon = (type: string) => {
-    switch (type) {
-      case 'language':
-        return <Code className="w-4 h-4 text-blue-400" />;
-      case 'stars':
-        return <Star className="w-4 h-4 text-yellow-400" />;
-      case 'created':
-        return <Calendar className="w-4 h-4 text-green-400" />;
-      case 'topic':
-        return <Tag className="w-4 h-4 text-purple-400" />;
-      case 'user':
-        return <Users className="w-4 h-4 text-indigo-400" />;
-      case 'forks':
-        return <GitFork className="w-4 h-4 text-blue-400" />;
-      case 'updated':
-        return <Clock className="w-4 h-4 text-orange-400" />;
-      default:
-        return <Filter className="w-4 h-4 text-gray-400" />;
+  const handleRepoClick = (repo: GitHubRepo) => {
+    if (onSelectRepo) {
+      onSelectRepo(repo);
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
-        <div className="flex items-center space-x-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search GitHub repositories..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="search-input pl-10"
-            />
-          </div>
-          <div className="relative">
-            <button
-              className="btn-secondary"
-              onClick={() => setShowFilterMenu(!showFilterMenu)}
-            >
-              <Filter className="w-5 h-5" />
-              <span>Filters</span>
-            </button>
-            
-            {showFilterMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-10 p-3 space-y-3">
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-300">Language</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {['JavaScript', 'TypeScript', 'Python', 'Go', 'Rust'].map(lang => (
-                      <button
-                        key={lang}
-                        className="px-2 py-1 text-xs rounded-full bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 transition-colors"
-                        onClick={() => addFilter({ type: 'language', value: lang.toLowerCase(), label: lang })}
-                      >
-                        {lang}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-300">Stars</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {['>100', '>1000', '>10000'].map(stars => (
-                      <button
-                        key={stars}
-                        className="px-2 py-1 text-xs rounded-full bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-colors"
-                        onClick={() => addFilter({ type: 'stars', value: stars, label: `Stars ${stars}` })}
-                      >
-                        {stars}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-300">Created</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {['>2023-01-01', '>2022-01-01', '>2020-01-01'].map(date => (
-                      <button
-                        key={date}
-                        className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-300 hover:bg-green-500/30 transition-colors"
-                        onClick={() => addFilter({ 
-                          type: 'created', 
-                          value: date, 
-                          label: `Created ${date.replace('>', 'after ')}` 
-                        })}
-                      >
-                        {date.replace('>', 'After ')}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-300">Topics</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {['ai', 'machine-learning', 'web', 'blockchain', 'llm'].map(topic => (
-                      <button
-                        key={topic}
-                        className="px-2 py-1 text-xs rounded-full bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 transition-colors"
-                        onClick={() => addFilter({ type: 'topic', value: topic, label: `Topic: ${topic}` })}
-                      >
-                        {topic}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          Advanced GitHub Search
+        </h2>
+      </div>
+
+      <div className="glass-card p-6 rounded-xl space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">
+              Search Query
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search repositories..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input pl-10"
+              />
+            </div>
           </div>
           
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">
+              Language
+            </label>
+            <div className="relative">
+              <Code className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                className="search-input pl-10"
+              >
+                <option value="">Any Language</option>
+                <option value="javascript">JavaScript</option>
+                <option value="typescript">TypeScript</option>
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+                <option value="go">Go</option>
+                <option value="rust">Rust</option>
+                <option value="c++">C++</option>
+                <option value="c#">C#</option>
+                <option value="php">PHP</option>
+                <option value="ruby">Ruby</option>
+              </select>
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">
+              Minimum Stars
+            </label>
+            <div className="relative">
+              <Star className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="number"
+                placeholder="e.g. 1000"
+                value={minStars}
+                onChange={(e) => setMinStars(e.target.value)}
+                className="search-input pl-10"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">
+              Created After
+            </label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="date"
+                value={createdAfter}
+                onChange={(e) => setCreatedAfter(e.target.value)}
+                className="search-input pl-10"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">
+              Topics (comma separated)
+            </label>
+            <div className="relative">
+              <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="e.g. react, machine-learning"
+                value={topics}
+                onChange={(e) => setTopics(e.target.value)}
+                className="search-input pl-10"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">
+              Sort By
+            </label>
+            <div className="flex space-x-2">
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as any)}
+                className="search-input flex-1"
+              >
+                <option value="stars">Stars</option>
+                <option value="forks">Forks</option>
+                <option value="updated">Updated</option>
+              </select>
+              
+              <select
+                value={order}
+                onChange={(e) => setOrder(e.target.value as any)}
+                className="search-input w-24"
+              >
+                <option value="desc">Desc</option>
+                <option value="asc">Asc</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex justify-end">
           <button
-            className="btn-primary"
             onClick={handleSearch}
+            className="btn-primary"
+            disabled={isLoading}
           >
-            <Search className="w-5 h-5" />
+            {isLoading ? (
+              <Loader className="w-5 h-5 animate-spin" />
+            ) : (
+              <Search className="w-5 h-5" />
+            )}
             <span>Search</span>
           </button>
         </div>
-        
-        {filters.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {filters.map((filter, index) => (
-              <div
-                key={`${filter.type}-${filter.value}`}
-                className="flex items-center space-x-1 px-2 py-1 rounded-full bg-gray-700/50 text-sm"
-              >
-                {getFilterIcon(filter.type)}
-                <span>{filter.label}</span>
-                <button
-                  className="ml-1 p-0.5 rounded-full hover:bg-gray-600 transition-colors"
-                  onClick={() => removeFilter(index)}
-                >
-                  <X className="w-3 h-3 text-gray-400" />
-                </button>
-              </div>
-            ))}
-            <button
-              className="text-sm text-gray-400 hover:text-white transition-colors"
-              onClick={() => setFilters([])}
-            >
-              Clear all
-            </button>
-          </div>
-        )}
-        
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-400">Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-sm"
-            >
-              <option value="stars">Stars</option>
-              <option value="forks">Forks</option>
-              <option value="updated">Updated</option>
-              <option value="created">Created</option>
-            </select>
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as any)}
-              className="bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-sm"
-            >
-              <option value="desc">Descending</option>
-              <option value="asc">Ascending</option>
-            </select>
-          </div>
-          
-          {repositories.length > 0 && (
-            <span className="text-sm text-gray-400">
-              {repositories.length} repositories found
-            </span>
-          )}
-        </div>
       </div>
-      
-      {/* Results */}
+
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+        <div className="flex items-center justify-center py-12">
+          <Loader className="w-8 h-8 text-blue-500 animate-spin" />
+          <span className="ml-3 text-gray-400">Searching repositories...</span>
         </div>
-      ) : (
+      ) : searchResults.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {repositories.map((repo) => (
+          {searchResults.map((repo) => (
             <div
               key={repo.id}
               className="glass-card p-6 rounded-xl space-y-4 cursor-pointer hover:scale-[1.02] transition-all duration-300"
-              onClick={() => onSelectRepo(repo)}
+              onClick={() => handleRepoClick(repo)}
             >
-              <div className="flex items-center space-x-3">
-                <img
-                  src={repo.owner.avatar_url}
-                  alt={`${repo.name} owner avatar`}
-                  className="w-8 h-8 rounded-lg"
-                />
-                <h3 className="text-lg font-semibold text-white">{repo.name}</h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <img
+                    src={repo.owner.avatar_url}
+                    alt={`${repo.name} owner avatar`}
+                    className="w-8 h-8 rounded-lg"
+                  />
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">{repo.name}</h3>
+                    <div className="text-xs text-gray-400">by {repo.owner.login}</div>
+                  </div>
+                </div>
+                <div className="flex space-x-1">
+                  <button
+                    onClick={(e) => handleSaveRepo(repo, e)}
+                    className="p-1.5 rounded-lg hover:bg-gray-700/50 transition-colors"
+                    title={savedRepoIds.has(repo.id) ? 'Saved' : 'Save Repository'}
+                  >
+                    {savedRepoIds.has(repo.id) ? (
+                      <BookmarkCheck className="w-5 h-5 text-green-400" />
+                    ) : (
+                      <Bookmark className="w-5 h-5 text-gray-400" />
+                    )}
+                  </button>
+                  <a
+                    href={repo.html_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-lg hover:bg-gray-700/50 transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink className="w-5 h-5 text-gray-400" />
+                  </a>
+                </div>
               </div>
 
               <p className="text-gray-400 line-clamp-2">{repo.description}</p>
@@ -300,30 +284,40 @@ const AdvancedGitHubSearch: React.FC<AdvancedGitHubSearchProps> = ({ onSelectRep
                   <GitFork className="w-4 h-4 text-blue-400" />
                   <span>{repo.forks_count.toLocaleString()}</span>
                 </span>
-                <span className="flex items-center space-x-1">
-                  <Eye className="w-4 h-4 text-green-400" />
-                  <span>{repo.watchers_count.toLocaleString()}</span>
-                </span>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
                 {repo.language && (
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                    {repo.language}
+                  <span className="flex items-center space-x-1">
+                    <span className="w-3 h-3 rounded-full bg-purple-400" />
+                    <span>{repo.language}</span>
                   </span>
                 )}
-                {repo.topics?.slice(0, 3).map(topic => (
-                  <span key={topic} className="px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                    {topic}
-                  </span>
-                ))}
               </div>
+
+              {repo.topics && repo.topics.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {repo.topics.slice(0, 3).map(topic => (
+                    <span key={topic} className="px-2 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                      {topic}
+                    </span>
+                  ))}
+                  {repo.topics.length > 3 && (
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-700/50 text-gray-400">
+                      +{repo.topics.length - 3} more
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+          <Search className="w-16 h-16 text-gray-600 mb-4" />
+          <h3 className="text-xl font-semibold mb-2">No repositories found</h3>
+          <p className="text-center">
+            {searchQuery ? "Try adjusting your search criteria" : "Enter a search query to find repositories"}
+          </p>
         </div>
       )}
     </div>
   );
-};
-
-export default AdvancedGitHubSearch;
+}
