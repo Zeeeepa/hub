@@ -1,0 +1,67 @@
+name: Codegen CI/CD Integration
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  analyze-pr:
+    if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '/analyze'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Analyze PR changes
+        id: analyze
+        uses: ./src/ci-cd/github-integration/action
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          codegen-api-key: ${{ secrets.CODEGEN_API_KEY }}
+
+      - name: Post analysis to PR
+        if: github.event_name == 'pull_request' || (github.event_name == 'issue_comment' && contains(github.event.comment.body, '/analyze'))
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const analysisResult = fs.readFileSync('analysis-result.json', 'utf8');
+            const result = JSON.parse(analysisResult);
+            
+            const body = `## Codegen Analysis Results
+            
+            ${result.summary}
+            
+            ### Alignment with Requirements
+            ${result.requirementsAnalysis}
+            
+            ### Suggested Next Steps
+            ${result.suggestedNextSteps}
+            
+            [View detailed analysis in Slack](${result.slackThreadUrl})
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
