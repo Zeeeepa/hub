@@ -7,3 +7,5 @@ and maybe for planning
 https://github.com/zeeeepa/plangen
 
 for project management https://github.com/zeeeepa/Clean-Coder-AI ?
+
+https://github.com/Zeeeepa/plandex   - project panning?
