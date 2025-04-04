@@ -64,14 +64,19 @@ export async function getReadme(owner: string, repo: string): Promise<string> {
 export async function getRepoContents(
   owner: string,
   repo: string,
-  path: string = ''
-): Promise<any[]> {
+  path: string = '',
+  getContent: boolean = false
+): Promise<any> {
   if (!octokit) initializeOctokit();
   
   try {
     console.log(`Fetching repo contents for ${owner}/${repo}/${path}`);
     
     // Mock implementation
+    if (getContent) {
+      return `// Sample content for ${path}\n\nfunction example() {\n  console.log("This is a sample file content");\n  return true;\n}`;
+    }
+    
     return [
       { name: 'src', type: 'dir', path: 'src' },
       { name: 'README.md', type: 'file', path: 'README.md' },
@@ -79,26 +84,52 @@ export async function getRepoContents(
     ];
   } catch (error) {
     console.error('Error fetching repo contents:', error);
-    return [];
+    return getContent ? '' : [];
   }
 }
 
 // Get symbol tree (mock implementation)
-export async function getSymbolTree(owner: string, repo: string, path: string): Promise<SymbolTree | null> {
+export async function getSymbolTree(owner: string, repo: string, path?: string): Promise<SymbolTreeItem[]> {
   try {
     // This would typically call a GitHub API or a language server
     // For now, we'll return mock data
-    console.log(`Fetching symbol tree for ${owner}/${repo}/${path}`);
+    console.log(`Fetching symbol tree for ${owner}/${repo}${path ? '/' + path : ''}`);
     
     // Mock implementation
-    return {
-      classes: ['Component', 'Repository', 'User'],
-      functions: ['fetchData', 'processResults', 'renderContent'],
-      variables: ['apiUrl', 'token', 'config']
-    };
+    return [
+      {
+        name: 'Component',
+        kind: 'class',
+        path: 'src/components/Component.tsx',
+        line: 10,
+        children: [
+          {
+            name: 'render',
+            kind: 'function',
+            path: 'src/components/Component.tsx',
+            line: 15,
+            children: []
+          }
+        ]
+      },
+      {
+        name: 'fetchData',
+        kind: 'function',
+        path: 'src/utils/api.ts',
+        line: 5,
+        children: []
+      },
+      {
+        name: 'API_URL',
+        kind: 'variable',
+        path: 'src/utils/constants.ts',
+        line: 3,
+        children: []
+      }
+    ];
   } catch (error) {
     console.error('Error fetching symbol tree:', error);
-    return null;
+    return [];
   }
 }
 
@@ -293,6 +324,34 @@ export async function getRepositoryCommits(
     }));
   } catch (error) {
     console.error('Error fetching repository commits:', error);
+    return [];
+  }
+}
+
+// Get popular repositories
+export async function getPopularRepositories(
+  language: string = '',
+  limit: number = 10
+): Promise<GitHubRepo[]> {
+  if (!octokit) initializeOctokit();
+  
+  // Build query
+  let query = 'stars:>1000';
+  if (language) {
+    query += ` language:${language}`;
+  }
+  
+  try {
+    const { data } = await octokit!.rest.search.repos({
+      q: query,
+      sort: 'stars',
+      order: 'desc',
+      per_page: limit
+    });
+    
+    return data.items as GitHubRepo[];
+  } catch (error) {
+    console.error('Error fetching popular repositories:', error);
     return [];
   }
 }
