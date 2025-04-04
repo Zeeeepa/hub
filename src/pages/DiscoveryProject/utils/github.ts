@@ -30,27 +30,6 @@ export interface SymbolTreeItem {
   children?: SymbolTreeItem[];
 }
 
-// File or directory item interface
-export interface RepoContentItem {
-  name: string;
-  path: string;
-  type: 'file' | 'dir';
-  size?: number;
-  content?: string;
-}
-
-// GitHub user interface
-export interface GitHubUser {
-  login: string;
-  avatar_url: string;
-  name: string;
-  bio: string;
-  public_repos: number;
-  followers: number;
-  following: number;
-  html_url: string;
-}
-
 // Initialize Octokit with token from localStorage
 let octokit: Octokit | null = null;
 
@@ -63,83 +42,6 @@ export function initializeOctokit(token?: string): void {
     });
   } else {
     octokit = new Octokit();
-  }
-}
-
-// Validate GitHub token
-export async function validateGitHubToken(token: string): Promise<boolean> {
-  try {
-    const tempOctokit = new Octokit({ auth: token });
-    const { status } = await tempOctokit.rest.users.getAuthenticated();
-    return status === 200;
-  } catch (error) {
-    console.error('Error validating GitHub token:', error);
-    return false;
-  }
-}
-
-// Get user profile
-export async function getUserProfile(): Promise<GitHubUser | null> {
-  if (!octokit) initializeOctokit();
-  
-  try {
-    const { data } = await octokit!.rest.users.getAuthenticated();
-    return {
-      login: data.login,
-      avatar_url: data.avatar_url,
-      name: data.name || data.login,
-      bio: data.bio || '',
-      public_repos: data.public_repos,
-      followers: data.followers,
-      following: data.following,
-      html_url: data.html_url
-    };
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
-    return null;
-  }
-}
-
-// Search repositories
-export async function searchRepositories(
-  query: string,
-  sort: 'stars' | 'forks' | 'updated' = 'stars',
-  order: 'asc' | 'desc' = 'desc',
-  perPage: number = 10,
-  page: number = 1
-): Promise<GitHubRepo[]> {
-  if (!octokit) initializeOctokit();
-  
-  try {
-    const { data } = await octokit!.rest.search.repos({
-      q: query,
-      sort,
-      order,
-      per_page: perPage,
-      page
-    });
-    
-    return data.items as GitHubRepo[];
-  } catch (error) {
-    console.error('Error searching repositories:', error);
-    return [];
-  }
-}
-
-// Get repository details
-export async function getRepoDetails(owner: string, repo: string): Promise<GitHubRepo | null> {
-  if (!octokit) initializeOctokit();
-  
-  try {
-    const { data } = await octokit!.rest.repos.get({
-      owner,
-      repo
-    });
-    
-    return data as GitHubRepo;
-  } catch (error) {
-    console.error('Error fetching repository details:', error);
-    return null;
   }
 }
 
@@ -156,7 +58,7 @@ export async function getReadme(owner: string, repo: string): Promise<string | n
       }
     });
     
-    return data as string;
+    return data as unknown as string;
   } catch (error) {
     console.error('Error fetching README:', error);
     return null;
@@ -168,8 +70,8 @@ export async function getRepoContents(
   owner: string,
   repo: string,
   path: string,
-  getContent: boolean = false
-): Promise<RepoContentItem[] | string> {
+  isFile: boolean = false
+): Promise<any> {
   if (!octokit) initializeOctokit();
   
   try {
@@ -179,36 +81,26 @@ export async function getRepoContents(
       path
     });
     
-    if (Array.isArray(data)) {
-      return data.map(item => ({
-        name: item.name,
-        path: item.path,
-        type: item.type as 'file' | 'dir',
-        size: item.size
-      }));
-    } else if (getContent) {
-      // For a single file when content is requested
-      const content = Buffer.from(data.content, 'base64').toString('utf-8');
-      return content;
+    if (isFile) {
+      // For files, return decoded content
+      if ('content' in data && 'encoding' in data && data.encoding === 'base64') {
+        return Buffer.from(data.content, 'base64').toString('utf-8');
+      }
+      return null;
     } else {
-      // For a single file when content is not requested
-      return [{
-        name: data.name,
-        path: data.path,
-        type: data.type as 'file' | 'dir',
-        size: data.size
-      }];
+      // For directories, return array of items
+      return Array.isArray(data) ? data : [data];
     }
   } catch (error) {
     console.error('Error fetching repository contents:', error);
-    return [];
+    return isFile ? null : [];
   }
 }
 
 // Get symbol tree (mock implementation)
 export async function getSymbolTree(owner: string, repo: string): Promise<SymbolTreeItem[]> {
-  // This is a mock implementation
-  // In a real application, you would use a code analysis service or GitHub's API
+  // In a real implementation, this would use a code analysis API or GitHub's GraphQL API
+  // For now, we'll return mock data
   return [
     {
       name: 'App',
@@ -226,77 +118,20 @@ export async function getSymbolTree(owner: string, repo: string): Promise<Symbol
       ]
     },
     {
-      name: 'utils',
-      kind: 'namespace',
-      path: 'src/utils',
-      line: 1,
-      children: [
-        {
-          name: 'formatDate',
-          kind: 'function',
-          path: 'src/utils/date.ts',
-          line: 5,
-          children: []
-        },
-        {
-          name: 'parseJSON',
-          kind: 'function',
-          path: 'src/utils/json.ts',
-          line: 8,
-          children: []
-        }
-      ]
+      name: 'useGitHubApi',
+      kind: 'function',
+      path: 'src/hooks/useGitHubApi.ts',
+      line: 5,
+      children: []
+    },
+    {
+      name: 'GitHubContext',
+      kind: 'interface',
+      path: 'src/contexts/GitHubContext.tsx',
+      line: 8,
+      children: []
     }
   ];
-}
-
-// Get trending repositories
-export async function getTrendingRepositories(
-  language: string = '',
-  since: 'daily' | 'weekly' | 'monthly' = 'weekly',
-  limit: number = 10
-): Promise<GitHubRepo[]> {
-  if (!octokit) initializeOctokit();
-  
-  // Calculate date range based on 'since' parameter
-  const now = new Date();
-  let daysAgo;
-  
-  switch (since) {
-    case 'daily':
-      daysAgo = 1;
-      break;
-    case 'monthly':
-      daysAgo = 30;
-      break;
-    case 'weekly':
-    default:
-      daysAgo = 7;
-      break;
-  }
-  
-  const date = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-  const dateString = date.toISOString().split('T')[0];
-  
-  // Build query
-  let query = `created:>${dateString}`;
-  if (language) {
-    query += ` language:${language}`;
-  }
-  
-  try {
-    const { data } = await octokit!.rest.search.repos({
-      q: query,
-      sort: 'stars',
-      order: 'desc',
-      per_page: limit
-    });
-    
-    return data.items as GitHubRepo[];
-  } catch (error) {
-    console.error('Error fetching trending repositories:', error);
-    return [];
-  }
 }
 
 // Get related repositories
@@ -333,6 +168,163 @@ export async function getRelatedRepositories(
     return data.items as GitHubRepo[];
   } catch (error) {
     console.error('Error fetching related repositories:', error);
+    return [];
+  }
+}
+
+// Get repository contributors
+export async function getRepositoryContributors(
+  owner: string,
+  repo: string,
+  limit: number = 10
+): Promise<Array<{ login: string; avatar_url: string; contributions: number }>> {
+  if (!octokit) initializeOctokit();
+  
+  try {
+    const { data } = await octokit!.rest.repos.listContributors({
+      owner,
+      repo,
+      per_page: limit
+    });
+    
+    return data.map(contributor => ({
+      login: contributor.login,
+      avatar_url: contributor.avatar_url,
+      contributions: contributor.contributions
+    }));
+  } catch (error) {
+    console.error('Error fetching repository contributors:', error);
+    return [];
+  }
+}
+
+// Get repository issues
+export async function getRepositoryIssues(
+  owner: string,
+  repo: string,
+  state: 'open' | 'closed' | 'all' = 'open',
+  limit: number = 10
+): Promise<Array<{ 
+  number: number; 
+  title: string; 
+  state: string; 
+  html_url: string;
+  user: { login: string; avatar_url: string };
+  created_at: string;
+  updated_at: string;
+  comments: number;
+}>> {
+  if (!octokit) initializeOctokit();
+  
+  try {
+    const { data } = await octokit!.rest.issues.listForRepo({
+      owner,
+      repo,
+      state,
+      per_page: limit
+    });
+    
+    return data.map(issue => ({
+      number: issue.number,
+      title: issue.title,
+      state: issue.state,
+      html_url: issue.html_url,
+      user: {
+        login: issue.user.login,
+        avatar_url: issue.user.avatar_url
+      },
+      created_at: issue.created_at,
+      updated_at: issue.updated_at,
+      comments: issue.comments
+    }));
+  } catch (error) {
+    console.error('Error fetching repository issues:', error);
+    return [];
+  }
+}
+
+// Get repository pull requests
+export async function getRepositoryPullRequests(
+  owner: string,
+  repo: string,
+  state: 'open' | 'closed' | 'all' = 'open',
+  limit: number = 10
+): Promise<Array<{
+  number: number;
+  title: string;
+  state: string;
+  html_url: string;
+  user: { login: string; avatar_url: string };
+  created_at: string;
+  updated_at: string;
+  merged_at: string | null;
+}>> {
+  if (!octokit) initializeOctokit();
+  
+  try {
+    const { data } = await octokit!.rest.pulls.list({
+      owner,
+      repo,
+      state,
+      per_page: limit
+    });
+    
+    return data.map(pr => ({
+      number: pr.number,
+      title: pr.title,
+      state: pr.state,
+      html_url: pr.html_url,
+      user: {
+        login: pr.user.login,
+        avatar_url: pr.user.avatar_url
+      },
+      created_at: pr.created_at,
+      updated_at: pr.updated_at,
+      merged_at: pr.merged_at
+    }));
+  } catch (error) {
+    console.error('Error fetching repository pull requests:', error);
+    return [];
+  }
+}
+
+// Get repository commit history
+export async function getRepositoryCommits(
+  owner: string,
+  repo: string,
+  limit: number = 10
+): Promise<Array<{
+  sha: string;
+  html_url: string;
+  commit: { message: string; author: { name: string; date: string } };
+  author: { login: string; avatar_url: string } | null;
+}>> {
+  if (!octokit) initializeOctokit();
+  
+  try {
+    const { data } = await octokit!.rest.repos.listCommits({
+      owner,
+      repo,
+      per_page: limit
+    });
+    
+    return data.map(commit => ({
+      sha: commit.sha,
+      html_url: commit.html_url,
+      commit: {
+        message: commit.commit.message,
+        author: {
+          name: commit.commit.author.name,
+          date: commit.commit.author.date
+        }
+      },
+      author: commit.author ? {
+        login: commit.author.login,
+        avatar_url: commit.author.avatar_url
+      } : null
+    }));
+  } catch (error) {
+    console.error('Error fetching repository commits:', error);
     return [];
   }
 }
