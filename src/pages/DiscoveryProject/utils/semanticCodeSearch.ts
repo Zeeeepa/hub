@@ -1,70 +1,189 @@
 // Interface for code search results
 export interface CodeSearchResult {
-  path: string;
-  content: string;
+  filePath: string;
+  fileName: string;
   language: string;
+  snippet: string;
   lineStart: number;
   lineEnd: number;
   score: number;
-  repository?: string;
-  matches?: {
-    line: number;
-    content: string;
-  }[];
+  matchedQuery: string;
 }
 
-// Mock data for semantic code search
-const mockResults: CodeSearchResult[] = [
-  {
-    path: 'src/components/Button.tsx',
-    content: `import React from 'react';
+// Mock function to simulate semantic code search
+export async function searchCodeSemantically(
+  query: string,
+  projectPath?: string,
+  semantic: boolean = true
+): Promise<CodeSearchResult[]> {
+  // Simulate API call delay
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  // Mock results based on query
+  const results: CodeSearchResult[] = [];
+  
+  // Generate some mock results based on the query
+  if (query.toLowerCase().includes('react')) {
+    results.push({
+      filePath: 'src/components/App.tsx',
+      fileName: 'App.tsx',
+      language: 'typescript',
+      snippet: `import React, { useState, useEffect } from 'react';
+import { ThemeProvider } from './ThemeContext';
+
+function App() {
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    // Simulate loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  return (
+    <ThemeProvider>
+      <div className="app">
+        {isLoading ? <LoadingSpinner /> : <MainContent />}
+      </div>
+    </ThemeProvider>
+  );
+}`,
+      lineStart: 3,
+      lineEnd: 21,
+      score: 0.92,
+      matchedQuery: 'react component'
+    });
+  }
+  
+  if (query.toLowerCase().includes('api') || query.toLowerCase().includes('fetch')) {
+    results.push({
+      filePath: 'src/services/api.ts',
+      fileName: 'api.ts',
+      language: 'typescript',
+      snippet: `import axios from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api.example.com';
+
+export async function fetchData<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  try {
+    const response = await axios.get(\`\${API_BASE_URL}/\${endpoint}\`, options);
+    return response.data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}
+
+export async function postData<T, R>(endpoint: string, data: T): Promise<R> {
+  try {
+    const response = await axios.post(\`\${API_BASE_URL}/\${endpoint}\`, data);
+    return response.data;
+  } catch (error) {
+    console.error('API request failed:', error);
+    throw error;
+  }
+}`,
+      lineStart: 1,
+      lineEnd: 22,
+      score: 0.88,
+      matchedQuery: 'api fetch'
+    });
+  }
+  
+  if (query.toLowerCase().includes('github')) {
+    results.push({
+      filePath: 'src/services/github.ts',
+      fileName: 'github.ts',
+      language: 'typescript',
+      snippet: `import { Octokit } from '@octokit/rest';
+
+const octokit = new Octokit({
+  auth: process.env.GITHUB_TOKEN
+});
+
+export async function searchRepositories(query: string, page = 1, perPage = 10) {
+  try {
+    const response = await octokit.search.repos({
+      q: query,
+      page,
+      per_page: perPage,
+      sort: 'stars',
+      order: 'desc'
+    });
+    
+    return {
+      items: response.data.items,
+      totalCount: response.data.total_count
+    };
+  } catch (error) {
+    console.error('GitHub search failed:', error);
+    throw error;
+  }
+}`,
+      lineStart: 1,
+      lineEnd: 22,
+      score: 0.95,
+      matchedQuery: 'github api'
+    });
+  }
+  
+  if (query.toLowerCase().includes('component') || query.toLowerCase().includes('button')) {
+    results.push({
+      filePath: 'src/components/Button.tsx',
+      fileName: 'Button.tsx',
+      language: 'typescript',
+      snippet: `import React from 'react';
+import classNames from 'classnames';
 
 interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'small' | 'medium' | 'large';
   onClick?: () => void;
   disabled?: boolean;
   children: React.ReactNode;
+  className?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
-  size = 'md',
+  size = 'medium',
   onClick,
   disabled = false,
-  children
+  children,
+  className,
+  ...rest
 }) => {
-  const getVariantClasses = () => {
-    switch (variant) {
-      case 'primary':
-        return 'bg-blue-600 hover:bg-blue-700 text-white';
-      case 'secondary':
-        return 'bg-gray-200 hover:bg-gray-300 text-gray-800';
-      case 'danger':
-        return 'bg-red-600 hover:bg-red-700 text-white';
-      default:
-        return 'bg-blue-600 hover:bg-blue-700 text-white';
-    }
+  const baseClasses = 'rounded font-medium focus:outline-none transition-colors';
+  
+  const variantClasses = {
+    primary: 'bg-blue-500 hover:bg-blue-600 text-white',
+    secondary: 'bg-gray-200 hover:bg-gray-300 text-gray-800',
+    danger: 'bg-red-500 hover:bg-red-600 text-white'
   };
-
-  const getSizeClasses = () => {
-    switch (size) {
-      case 'sm':
-        return 'px-2 py-1 text-sm';
-      case 'lg':
-        return 'px-6 py-3 text-lg';
-      default:
-        return 'px-4 py-2 text-base';
-    }
+  
+  const sizeClasses = {
+    small: 'py-1 px-2 text-sm',
+    medium: 'py-2 px-4 text-base',
+    large: 'py-3 px-6 text-lg'
   };
-
+  
+  const buttonClasses = classNames(
+    baseClasses,
+    variantClasses[variant],
+    sizeClasses[size],
+    disabled && 'opacity-50 cursor-not-allowed',
+    className
+  );
+  
   return (
     <button
-      className={`rounded-md font-medium transition-colors ${getVariantClasses()} ${getSizeClasses()} ${
-        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-      }`}
+      className={buttonClasses}
       onClick={onClick}
       disabled={disabled}
+      {...rest}
     >
       {children}
     </button>
@@ -72,255 +191,131 @@ const Button: React.FC<ButtonProps> = ({
 };
 
 export default Button;`,
-    language: 'typescript',
-    lineStart: 1,
-    lineEnd: 53,
-    score: 0.95,
-    matches: [
-      {
-        line: 3,
-        content: 'interface ButtonProps {'
-      },
-      {
-        line: 10,
-        content: 'const Button: React.FC<ButtonProps> = ({'
-      }
-    ]
-  },
-  {
-    path: 'src/utils/api.ts',
-    content: `import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://api.example.com';
-
-// Create axios instance with default config
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json'
+      lineStart: 1,
+      lineEnd: 53,
+      score: 0.89,
+      matchedQuery: 'button component'
+    });
   }
-});
+  
+  // Add more mock results based on common queries
+  if (results.length === 0) {
+    // Default result if no specific matches
+    results.push({
+      filePath: 'src/utils/helpers.ts',
+      fileName: 'helpers.ts',
+      language: 'typescript',
+      snippet: `/**
+ * Collection of helper functions
+ */
 
-// Request interceptor for adding auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers.Authorization = \`Bearer \${token}\`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+/**
+ * Format a date string to a human-readable format
+ */
+export function formatDate(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
 
-// Response interceptor for handling errors
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
+/**
+ * Safely parse JSON with error handling
+ */
+export function safeJsonParse<T>(json: string, fallback: T): T {
+  try {
+    return JSON.parse(json) as T;
+  } catch (error) {
+    console.error('Failed to parse JSON:', error);
+    return fallback;
   }
-);
+}
 
-export default api;`,
-    language: 'typescript',
-    lineStart: 1,
-    lineEnd: 35,
-    score: 0.89,
-    matches: [
-      {
-        line: 6,
-        content: 'const api = axios.create({'
-      },
-      {
-        line: 14,
-        content: 'api.interceptors.request.use('
-      }
-    ]
-  },
-  {
-    path: 'src/hooks/useLocalStorage.ts',
-    content: `import { useState, useEffect } from 'react';
-
-function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => void] {
-  // Get from local storage then
-  // parse stored json or return initialValue
-  const readValue = (): T => {
-    // Prevent build error "window is undefined" but keep working
-    if (typeof window === 'undefined') {
-      return initialValue;
-    }
-
-    try {
-      const item = window.localStorage.getItem(key);
-      return item ? (JSON.parse(item) as T) : initialValue;
-    } catch (error) {
-      console.warn(\`Error reading localStorage key "\${key}":\`, error);
-      return initialValue;
-    }
-  };
-
-  // State to store our value
-  // Pass initial state function to useState so logic is only executed once
-  const [storedValue, setStoredValue] = useState<T>(readValue);
-
-  // Return a wrapped version of useState's setter function that ...
-  // ... persists the new value to localStorage.
-  const setValue = (value: T) => {
-    try {
-      // Allow value to be a function so we have the same API as useState
-      const valueToStore =
-        value instanceof Function ? value(storedValue) : value;
-      
-      // Save to state
-      setStoredValue(valueToStore);
-      
-      // Save to local storage
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
-      }
-    } catch (error) {
-      console.warn(\`Error setting localStorage key "\${key}":\`, error);
-    }
-  };
-
-  useEffect(() => {
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === key && event.newValue) {
-        setStoredValue(JSON.parse(event.newValue));
-      }
+/**
+ * Debounce a function call
+ */
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null;
+  
+  return function(...args: Parameters<T>): void {
+    const later = () => {
+      timeout = null;
+      func(...args);
     };
-
-    // Listen for changes to this localStorage key in other tabs/windows
-    window.addEventListener('storage', handleStorageChange);
     
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [key]);
-
-  return [storedValue, setValue];
-}
-
-export default useLocalStorage;`,
-    language: 'typescript',
-    lineStart: 1,
-    lineEnd: 60,
-    score: 0.85,
-    matches: [
-      {
-        line: 3,
-        content: 'function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => void] {'
-      },
-      {
-        line: 22,
-        content: 'const [storedValue, setStoredValue] = useState<T>(readValue);'
-      }
-    ]
-  }
-];
-
-/**
- * Search code semantically using a natural language query
- * @param query The search query in natural language
- * @param projectPath Optional path to limit search to a specific project
- * @param semantic Whether to use semantic search (true) or keyword search (false)
- * @returns Array of code search results
- */
-export async function searchCodeSemantically(
-  query: string,
-  projectPath?: string,
-  semantic: boolean = true
-): Promise<CodeSearchResult[]> {
-  // This is a mock implementation
-  // In a real application, you would call a semantic code search API
-  
-  // Simulate API call delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Return mock results
-  return mockResults.map(result => ({
-    ...result,
-    // Add repository info if projectPath is provided
-    repository: projectPath || 'example/repo'
-  }));
-}
-
-/**
- * Get supported languages for code search
- * @returns Array of supported languages
- */
-export function getSupportedLanguages(): string[] {
-  return [
-    'javascript',
-    'typescript',
-    'python',
-    'java',
-    'go',
-    'rust',
-    'c',
-    'cpp',
-    'csharp',
-    'ruby',
-    'php',
-    'swift',
-    'kotlin'
-  ];
-}
-
-/**
- * Get file extension from language
- * @param language Programming language
- * @returns File extension (without dot)
- */
-export function getFileExtensionFromLanguage(language: string): string {
-  const extensionMap: Record<string, string> = {
-    javascript: 'js',
-    typescript: 'ts',
-    python: 'py',
-    java: 'java',
-    go: 'go',
-    rust: 'rs',
-    c: 'c',
-    cpp: 'cpp',
-    csharp: 'cs',
-    ruby: 'rb',
-    php: 'php',
-    swift: 'swift',
-    kotlin: 'kt'
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
   };
+}`,
+      lineStart: 1,
+      lineEnd: 42,
+      score: 0.75,
+      matchedQuery: query
+    });
+  }
   
-  return extensionMap[language.toLowerCase()] || '';
+  // Sort results by score
+  return results.sort((a, b) => b.score - a.score);
 }
 
-/**
- * Get language from file extension
- * @param extension File extension (without dot)
- * @returns Programming language
- */
-export function getLanguageFromFileExtension(extension: string): string {
+// Function to get language from file extension
+export function getLanguageFromExtension(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase() || '';
+  
   const languageMap: Record<string, string> = {
     js: 'javascript',
-    jsx: 'javascript',
+    jsx: 'jsx',
     ts: 'typescript',
-    tsx: 'typescript',
+    tsx: 'tsx',
     py: 'python',
+    rb: 'ruby',
     java: 'java',
     go: 'go',
     rs: 'rust',
-    c: 'c',
     cpp: 'cpp',
+    c: 'c',
     cs: 'csharp',
-    rb: 'ruby',
     php: 'php',
-    swift: 'swift',
-    kt: 'kotlin'
+    html: 'html',
+    css: 'css',
+    scss: 'scss',
+    json: 'json',
+    md: 'markdown',
+    yml: 'yaml',
+    yaml: 'yaml',
+    sh: 'bash',
+    bash: 'bash',
+    txt: 'text'
   };
   
-  return languageMap[extension.toLowerCase()] || 'plaintext';
+  return languageMap[ext] || 'text';
+}
+
+// Enhanced semantic search with code understanding capabilities
+export async function searchCodeWithContext(
+  query: string,
+  projectPath?: string
+): Promise<CodeSearchResult[]> {
+  // This would be implemented with a real semantic search engine
+  // For now, we'll just return the same mock results
+  return searchCodeSemantically(query, projectPath, true);
+}
+
+// Function to search for code patterns (regex-based search)
+export async function searchCodePatterns(
+  pattern: string,
+  projectPath?: string
+): Promise<CodeSearchResult[]> {
+  // This would be implemented with a real regex search engine
+  // For now, we'll just return the same mock results but with lower scores
+  const results = await searchCodeSemantically(pattern, projectPath, false);
+  return results.map(result => ({
+    ...result,
+    score: result.score * 0.8 // Lower score for pattern matching vs semantic
+  }));
 }
